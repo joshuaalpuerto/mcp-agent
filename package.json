@@ -1,0 +1,28 @@
+{
+  "name": "mcp-agent",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "run:dev": "nodemon",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.7.0",
+    "@smithery/sdk": "1.0.2",
+    "dotenv": "16.4.7",
+    "langsmith": "0.3.14",
+    "openai": "4.87.3",
+    "zod": "3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "22.13.10",
+    "nodemon": "3.1.9",
+    "ts-node": "10.9.2",
+    "typescript": "5.8.2"
+  }
+}

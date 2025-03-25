@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    // so we don't need to specify the extension for ts and js files
+    // will use the same way as node resolves modules
+    "moduleResolution": "node",
+    "outDir": "./build",
+    "rootDir": "./",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true,
+  },
+  "include": ["src/**/*.ts", "index.ts"],
+  "exclude": ["node_modules"],
+  "ts-node": {
+    // we don't need to emit the files, just transpiles them
+    "transpileOnly": true,
+    "esm": true,
+    // this is needed so we don't have to specify the extension for imports
+    "experimentalSpecifierResolution": "node"
+  }
+}
