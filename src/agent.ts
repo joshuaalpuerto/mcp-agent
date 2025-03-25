@@ -3,11 +3,11 @@ import MCPServerAggregator from './mcp/mcpServerAggregator';
 import { SimpleMemory } from './memory';
 import { LLMConfig, LLMInterface } from './llm/types';
 import { FunctionToolInterface } from './tools/types';
-
+import { ServerConfig } from './mcp/types';
 interface AgentConfig {
   name: string;
   description: string;
-  serverNames?: string[];
+  serverConfigs?: ServerConfig[];
   functions?: FunctionToolInterface[];
   llm?: LLMInterface;
 }
@@ -16,7 +16,7 @@ export class Agent {
   public name: string;
   public description: string;
   private history: SimpleMemory<OpenAI.ChatCompletionMessageParam>;
-  public serverNames?: string[];
+  public serverConfigs?: ServerConfig[];
   public functions?: Record<string, FunctionToolInterface>;
   private aggregator?: MCPServerAggregator;
   private llm?: LLMInterface | null;
@@ -28,7 +28,7 @@ export class Agent {
   }) {
     this.name = config.name;
     this.description = config.description;
-    this.serverNames = config.serverNames;
+    this.serverConfigs = config.serverConfigs;
 
     if (config.functions?.length) {
       this.functions = {}
@@ -51,8 +51,8 @@ export class Agent {
 
   static async initialize(config: AgentConfig) {
     // if we have server names then initialize Agent with MCP
-    if (config.serverNames?.length) {
-      const aggregator = await MCPServerAggregator.load(config.serverNames);
+    if (config.serverConfigs?.length) {
+      const aggregator = await MCPServerAggregator.load(config.serverConfigs);
       const agent = new Agent({ ...config, aggregator });
 
       return agent
@@ -153,7 +153,8 @@ export class Agent {
 
   // we can apply some logic here once we run the tool
   private async callTool(toolName: string, args: Object): Promise<any> {
-    if (this.serverNames?.includes(toolName) && this.aggregator) {
+    const isMCPTool = this.serverConfigs?.some(config => config.name === toolName);
+    if (isMCPTool && this.aggregator) {
       return this.aggregator.executeTool(toolName, args);
     }
 

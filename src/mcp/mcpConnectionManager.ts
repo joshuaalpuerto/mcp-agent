@@ -4,7 +4,7 @@ import { Transport } from '@modelcontextprotocol/sdk/shared/transport';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio';
 import { WebSocketClientTransport } from "@modelcontextprotocol/sdk/client/websocket.js"
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
-import { type ServerConfig } from './servers/availableServers';
+import { type ServerConfig } from '../../app/servers/availableServers';
 
 class MCPConnectionManager {
   private static instance: MCPConnectionManager;

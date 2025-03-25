@@ -1,8 +1,7 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index';
 import MCPConnectionManager from './mcpConnectionManager';
-import { getAvailableServers } from './servers/availableServers';
 import { CallToolResult, Tool } from '../tools/types';
-
+import { ServerConfig } from './types';
 // It's called aggregator because it's aggregating tools from multiple servers
 // agent has 1:1 connection with aggregator
 class MCPServerAggregator {
@@ -13,35 +12,29 @@ class MCPServerAggregator {
       tools: any[],
     }
   }> = new Map();
-  private serverNames: string[];
+  private serverConfigs: ServerConfig[];
   private connectionManager: MCPConnectionManager;
 
-  constructor({ serverNames }: { serverNames: string[] }) {
-    this.serverNames = serverNames;
+  constructor({ serverConfigs }: { serverConfigs: ServerConfig[] }) {
+    this.serverConfigs = serverConfigs;
     this.connectionManager = MCPConnectionManager.getInstance();
   }
 
-  static async load(serverNames: string[]): Promise<MCPServerAggregator> {
-    const mcpServeAggregator = new MCPServerAggregator({ serverNames });
+  static async load(serverConfigs: ServerConfig[]): Promise<MCPServerAggregator> {
+    const mcpServeAggregator = new MCPServerAggregator({ serverConfigs });
     await mcpServeAggregator.loadServers();
     return mcpServeAggregator;
   }
 
   async loadServers(): Promise<void> {
-    const availableServers = getAvailableServers();
-    for (const serverName of this.serverNames) {
+    for (const serverConfig of this.serverConfigs) {
       try {
-        const serverConfig = availableServers.find(server => server.name === serverName);
-        if (!serverConfig) {
-          throw new Error(`Server ${serverName} not found`);
-        }
-
-        const client = await this.connectionManager.launchServer(serverName, serverConfig);
+        const client = await this.connectionManager.launchServer(serverConfig.name, serverConfig);
 
         const tools = await client.listTools();
 
         // Store server information
-        this.servers.set(serverName, {
+        this.servers.set(serverConfig.name, {
           client,
           config: serverConfig,
           capabilities: {
@@ -49,7 +42,7 @@ class MCPServerAggregator {
           }
         });
       } catch (error) {
-        console.error(`Error adding server"${serverName}":`, error);
+        console.error(`Error adding server "${serverConfig.name}":`, error);
       }
     }
   }
