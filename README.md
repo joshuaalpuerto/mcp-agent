@@ -10,7 +10,7 @@ const llm = new LLMFireworks("accounts/fireworks/models/deepseek-v3", {
 const researcher = await Agent.initialize({
   name: "researcher",
   description: `Your expertise is to find information.`,
-  serverNames: ['search_web'], // mcp server
+  serverNames: ['search_web'], // mcp server support both (local and servers available in the web)
 });
 
 const writer = await Agent.initialize({
