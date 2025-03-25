@@ -13,7 +13,7 @@
     "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,
   },
-  "include": ["src/**/*.ts", "index.ts"],
+  "include": ["src/**/*.ts", "index.ts", "app/**/*.ts"],
   "exclude": ["node_modules"],
   "ts-node": {
     // we don't need to emit the files, just transpiles them

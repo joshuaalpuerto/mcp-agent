@@ -1,12 +1,9 @@
-# mcp-agent
-
-### Usage
-```js
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { Agent, LLMFireworks, Orchestrator } from 'mcp-agent';
+import { Agent } from '../src/agent';
+import { LLMFireworks } from '../src/llm/llmFireworks';
 import { writeLocalSystem } from './tools/writeLocalSystem';
-
+import { Orchestrator } from '../src/workflows/orchestrator/orchestrator';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -55,4 +52,3 @@ async function runOrchestrator() {
 }
 
 runOrchestrator().catch(console.error);
-```
