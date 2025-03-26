@@ -11,20 +11,20 @@ export enum AIResponseFormat {
   TEXT = 'text',
 }
 
-export type LLMConfig = {
-  maxTokens?: number;
-  temperature?: number;
-  stream?: boolean;
-  tools?: OpenAI.ChatCompletionTool[];
-  responseFormat?: OpenAI.ResponseFormatJSONSchema | OpenAI.ResponseFormatJSONSchema
-}
+export type LLMConfig = Partial<{
+  maxTokens: number;
+  temperature: number;
+  stream: boolean;
+  tools: OpenAI.ChatCompletionTool[];
+  responseFormat: OpenAI.ResponseFormatJSONSchema | OpenAI.ResponseFormatJSONSchema
+}>
 
-export type LLMResult = {
-  content?: string | null;
-  usage?: AIUsageInfo;
-  toolCalls?: OpenAI.ChatCompletionMessageToolCall[];
-  finishReason?: string;
-}
+export type LLMResult = Partial<{
+  content: string | null;
+  usage: AIUsageInfo;
+  toolCalls: OpenAI.ChatCompletionMessageToolCall[];
+  finishReason: string;
+}>
 
 export interface LLMInterface {
   generate(params: {

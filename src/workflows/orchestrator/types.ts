@@ -4,21 +4,21 @@ export enum PlanStatus {
   Complete = "Complete",
 }
 
-export interface PlanTask {
+export type PlanTask = {
   description: string;
   agent: string;
 }
 
-export interface PlanStep {
+export type PlanStep = {
   objective: string;
   tasks: PlanTask[];
 }
 
-export interface Plan {
+export type Plan = {
   steps: PlanStep[];
 }
 
-export interface TaskResult {
+export type TaskResult = {
   task: PlanTask;
   result: string;
 }
