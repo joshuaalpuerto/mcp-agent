@@ -42,7 +42,8 @@ class MCPServerAggregator {
           }
         });
       } catch (error) {
-        console.error(`Error adding server "${serverConfig.name}":`, error);
+        console.error(error)
+        throw new Error(`Error adding server "${serverConfig.name}": ${error}`);
       }
     }
   }

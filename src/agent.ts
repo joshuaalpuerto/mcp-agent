@@ -153,7 +153,7 @@ export class Agent {
 
   // we can apply some logic here once we run the tool
   private async callTool(toolName: string, args: Object): Promise<any> {
-    const isMCPTool = this.serverConfigs?.some(config => config.name === toolName);
+    const isMCPTool = this.aggregator?.findTool(toolName);
     if (isMCPTool && this.aggregator) {
       return this.aggregator.executeTool(toolName, args);
     }

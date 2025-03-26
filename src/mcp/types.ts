@@ -9,14 +9,13 @@ type StdioServerConfig = {
 type SSEServerConfig = {
   name: string;
   type: 'sse';
-  url: string;
+  url: string | URL;
 }
 
-type SmitheryServerConfig = {
+type WebSocketServerConfig = {
   name: string;
-  type: 'smithery';
-  deploymentUrl: string;
-  configSchema: any;
+  type: 'ws';
+  url: string | URL;
 }
 
-export type ServerConfig = StdioServerConfig | SmitheryServerConfig | SSEServerConfig
+export type ServerConfig = StdioServerConfig | SSEServerConfig | WebSocketServerConfig

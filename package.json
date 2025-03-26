@@ -4,6 +4,9 @@
   "description": "",
   "main": "index.js",
   "type": "module",
+  "engines": {
+    "node": ">=21.0.0"
+  },
   "scripts": {
     "run:test": "nodemon",
     "test": "echo \"Error: no test specified\" && exit 1"

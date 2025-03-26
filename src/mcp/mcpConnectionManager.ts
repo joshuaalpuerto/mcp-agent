@@ -1,15 +1,14 @@
-import { createSmitheryUrl } from "@smithery/sdk/config"
 import { Client } from '@modelcontextprotocol/sdk/client/index';
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio';
 import { WebSocketClientTransport } from "@modelcontextprotocol/sdk/client/websocket.js"
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
-import { type ServerConfig } from '../../app/servers/availableServers';
+import { type ServerConfig } from './types';
 
 class MCPConnectionManager {
   private static instance: MCPConnectionManager;
   private runningServers: Map<string, Client> = new Map();
-  private maxReconnectAttempts: number = 5;
+  private maxReconnectAttempts: number = 2;
   private reconnectDelay: number = 1000; // 1 second
 
   public static getInstance(): MCPConnectionManager {
@@ -36,15 +35,14 @@ class MCPConnectionManager {
           args: config.args || []
         });
         break;
-      case 'smithery':
-        const url = createSmitheryUrl(
-          config.deploymentUrl,
-          config.configSchema,
-        )
-        transport = new WebSocketClientTransport(url)
+      case "ws":
+        const wsUrl = config.url instanceof URL ? config.url : new URL(config.url);
+        // NOTE: ws transport requires node >= 21.0.0
+        transport = new WebSocketClientTransport(wsUrl);
         break;
       case 'sse':
-        transport = new SSEClientTransport(new URL(config.url));
+        const sseUrl = config.url instanceof URL ? config.url : new URL(config.url);
+        transport = new SSEClientTransport(sseUrl);
         break;
     }
 
