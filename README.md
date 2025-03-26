@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 import { Agent, LLMFireworks, Orchestrator } from 'mcp-agent';
 import { writeLocalSystem } from './tools/writeLocalSystem';
+import { createSmitheryUrl } from "@smithery/sdk/config"
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,18 +20,24 @@ async function runOrchestrator() {
   const researcher = await Agent.initialize({
     name: "researcher",
     description: `Your expertise is to find information.`,
-    serverConfigs: [{
-      name: "read_file_from_local_file_system",
-      type: "stdio",
-      command: "node",
-      args: ['--loader', 'ts-node/esm', path.resolve(__dirname, 'servers', 'readLocalFileSystem.ts'),]
-    },
-    {
-      name: "search_web",
-      type: "stdio",
-      command: "node",
-      args: ['--loader', 'ts-node/esm', path.resolve(__dirname, 'servers', 'searchWeb.ts'),]
-    }
+    serverConfigs: [
+      {
+        name: "read_file_from_local_file_system",
+        type: "stdio",
+        command: "node",
+        args: ['--loader', 'ts-node/esm', path.resolve(__dirname, 'servers', 'readLocalFileSystem.ts'),]
+      },
+      {
+        name: "search_web",
+        type: "ws",
+        // able to use online MCP server through ws.
+        url: createSmitheryUrl(
+          "https://server.smithery.ai/exa/ws",
+          {
+            exaApiKey: process.env.EXA_API_KEY
+          }
+        )
+      },
     ],
   });
 
@@ -40,7 +47,6 @@ async function runOrchestrator() {
     functions: [writeLocalSystem],
     llm,
   });
-
 
   const orchestrator = new Orchestrator({
     llm,
