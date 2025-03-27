@@ -2,18 +2,23 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
+    "lib": ["ES2022"],
+    // This will generate the .d.ts files for typesafety and autocomplete
+    "declaration": true,
     // so we don't need to specify the extension for ts and js files
     // will use the same way as node resolves modules
     "moduleResolution": "node",
-    "outDir": "./build",
-    "rootDir": "./",
+    "outDir": "./dist",
+    "rootDir": "./src", 
     "strict": true,
+    // Enables compatibility with Babel-style module imports
+    // Allows cleaner imports from CommonJS modules (e.g., import React from 'react' instead of import * as React from 'react')
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,
   },
-  "include": ["src/**/*.ts", "index.ts", "app/**/*.ts"],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules"],
   "ts-node": {
     // we don't need to emit the files, just transpiles them
