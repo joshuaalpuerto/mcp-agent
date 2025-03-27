@@ -8,6 +8,10 @@
   "files": [
     "dist"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joshuaalpuerto/mcp-agent.git"
+  },
   "engines": {
     "node": ">=21.0.0"
   },

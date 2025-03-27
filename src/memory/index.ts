@@ -1,4 +1,4 @@
-interface Memory<MessageParamT> {
+export interface Memory<MessageParamT> {
   extend(messages: MessageParamT[]): void;
   set(messages: MessageParamT[]): void;
   append(message: MessageParamT): void;

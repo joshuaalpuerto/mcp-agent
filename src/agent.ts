@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import MCPServerAggregator from './mcp/mcpServerAggregator';
-import { SimpleMemory } from './memory';
+import { SimpleMemory, Memory } from './memory';
 import { LLMConfig, LLMInterface } from './llm/types';
 import { FunctionToolInterface } from './tools/types';
 import { ServerConfig } from './mcp/types';
@@ -8,6 +8,7 @@ interface AgentConfig {
   name: string;
   description: string;
   serverConfigs?: ServerConfig[];
+  history?: Memory<OpenAI.ChatCompletionMessageParam>;
   functions?: FunctionToolInterface[];
   llm?: LLMInterface;
 }
@@ -15,7 +16,7 @@ interface AgentConfig {
 export class Agent {
   public name: string;
   public description: string;
-  private history: SimpleMemory<OpenAI.ChatCompletionMessageParam>;
+  private history: Memory<OpenAI.ChatCompletionMessageParam>;
   public serverConfigs?: ServerConfig[];
   public functions?: Record<string, FunctionToolInterface>;
   private aggregator?: MCPServerAggregator;
@@ -45,7 +46,7 @@ export class Agent {
       this.llm = config.llm;
     }
 
-    this.history = new SimpleMemory<OpenAI.ChatCompletionMessageParam>();
+    this.history = config.history || new SimpleMemory<OpenAI.ChatCompletionMessageParam>();
     this.history.set([{ role: 'system', content: `You are a ${this.name}. ${this.description} \n\n You have ability to use tools to help you complete the task.` }])
   }
 
