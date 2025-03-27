@@ -9,7 +9,7 @@ This library aims to bring the powerful patterns and architecture of `mcp-agent`
 ## Installation
 
 ```bash
-pnpm install mcp-agent # Or your package name if published
+npm install @joshuaalpuerto/mcp-agent@1.0.0
 ```
 
 ## Key Capabilities
