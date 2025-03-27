@@ -7,16 +7,29 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
       # Setup .npmrc file to publish to GitHub Packages
       - name: Set up Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
-          node-version: '22.x'
+          node-version: "22.x"
           registry-url: 'https://npm.pkg.github.com'
-          scope: '@joshuaalpuerto'
-      - run: npm build
+          cache: 'pnpm'
+      
+      - name: Install dependencies
+        run: pnpm install
+      
+      - name: Build
+        run: pnpm run build
       
       - name: Publish to GitHub Packages
         run: npm publish
