@@ -1,7 +1,7 @@
 import fs from 'fs';
-import { type CallToolResult } from '../../src/tools/types';
+import { type CallToolResult, FunctionToolInterface } from '../../src';
 
-export const writeLocalSystem = {
+export const writeLocalSystem: FunctionToolInterface = {
   name: 'writeLocalSystem',
   description: 'Write a file to the local system',
   parameters: {
