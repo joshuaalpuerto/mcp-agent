@@ -8,10 +8,7 @@
   "files": [
     "dist"
   ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/joshuaalpuerto/mcp-agent.git"
-  },
+  
   "engines": {
     "node": ">=21.0.0"
   },
@@ -20,8 +17,6 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.7.0",
     "@smithery/sdk": "1.0.2",
@@ -34,5 +29,18 @@
     "@types/node": "22.13.10",
     "ts-node": "10.9.2",
     "typescript": "5.8.2"
+  },
+  "author": "Joshua C Alpuerto <joshuacalpuerto@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joshuaalpuerto/mcp-agent.git"
+  },
+  "bugs": {
+    "url": "https://github.com/joshuaalpuerto/mcp-agent/issues"
+  },
+  "homepage": "https://github.com/joshuaalpuerto/fp-light#readme",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/@joshuaalpuerto"
   }
 }
