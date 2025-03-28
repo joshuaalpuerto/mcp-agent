@@ -26,7 +26,9 @@ npm install @joshuaalpuerto/mcp-agent@1.0.0
 
 ## Quick Start
 
-Get started quickly with a basic example:
+### Standalone Usage
+
+Get started quickly with a basic example (Using as standalone):
 
 ```js
 import { fileURLToPath } from 'url';
@@ -97,8 +99,11 @@ runOrchestrator().catch(console.error);
 2.  **Set Environment Variables:** Create a `.env` file (or set environment variables directly) and add your API keys (e.g., `EXA_API_KEY`, Fireworks AI API key if needed).
 3.  **Run the Demo:**
     ```bash
-    node --loader ts-node/esm ./demo/index.ts
+    node --loader ts-node/esm ./demo/standalone/index.ts
     ```
+
+### Rest server Integration
+For a complete Express.js integration example with multi-agent orchestration, check out the [demo/express/README.md](./demo/express/README.md).
 
 ## Core Concepts
 
