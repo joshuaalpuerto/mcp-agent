@@ -2,8 +2,8 @@
 import { createSmitheryUrl } from "@smithery/sdk/config"
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { Agent, LLMFireworks, Orchestrator } from '../src';
-import { writeLocalSystem } from './tools/writeLocalSystem';
+import { Agent, LLMFireworks, Orchestrator } from '../../src';
+import { writeLocalSystem } from '../tools/writeLocalSystem';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

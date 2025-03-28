@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "outDir": "./dist",
+    "baseUrl": "../../..",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "sourceMap": true
+  },
+  "include": ["src/**/*", "../../../src/**/*"],
+  "exclude": ["node_modules", "dist"],
+  "ts-node": {
+    // we don't need to emit the files, just transpiles them
+    "transpileOnly": true,
+    "esm": true,
+    // this is needed so we don't have to specify the extension for imports
+    "experimentalSpecifierResolution": "node"
+  }
+} 
