@@ -97,7 +97,7 @@ runOrchestrator().catch(console.error);
 2.  **Set Environment Variables:** Create a `.env` file (or set environment variables directly) and add your API keys (e.g., `EXA_API_KEY`, Fireworks AI API key if needed).
 3.  **Run the Demo:**
     ```bash
-    pnpm build && node --loader ts-node/esm ./demo/index.ts
+    node --loader ts-node/esm ./demo/index.ts
     ```
 
 ## Core Concepts
