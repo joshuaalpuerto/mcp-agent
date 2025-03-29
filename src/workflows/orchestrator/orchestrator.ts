@@ -74,7 +74,7 @@ ${planResultInfo}`);
       result: '',
     };
     const tasks = step.tasks.map(async task => {
-      const agent = this.agents[task.agent].setLLM(this.llm);
+      const agent = this.agents[task.agent]
       if (!agent) {
         throw new Error(`No agent found matching ${task.agent}`);
       }

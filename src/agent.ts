@@ -10,17 +10,17 @@ interface AgentConfig {
   serverConfigs?: ServerConfig[];
   history?: Memory<OpenAI.ChatCompletionMessageParam>;
   functions?: FunctionToolInterface[];
-  llm?: LLMInterface;
+  llm: LLMInterface;
 }
 
 export class Agent {
   public name: string;
   public description: string;
   private history: Memory<OpenAI.ChatCompletionMessageParam>;
+  private llm: LLMInterface | null;
+  private aggregator?: MCPServerAggregator;
   public serverConfigs?: ServerConfig[];
   public functions?: Record<string, FunctionToolInterface>;
-  private aggregator?: MCPServerAggregator;
-  private llm?: LLMInterface | null;
 
   constructor(config: AgentConfig & {
     // optional aggregator
@@ -30,6 +30,7 @@ export class Agent {
     this.name = config.name;
     this.description = config.description;
     this.serverConfigs = config.serverConfigs;
+    this.llm = config.llm;
 
     if (config.functions?.length) {
       this.functions = {}
@@ -42,9 +43,7 @@ export class Agent {
       this.aggregator = config.aggregator;
     }
 
-    if (config.llm) {
-      this.llm = config.llm;
-    }
+
 
     this.history = config.history || new SimpleMemory<OpenAI.ChatCompletionMessageParam>();
     this.history.set([{ role: 'system', content: `You are a ${this.name}. ${this.description} \n\n You have ability to use tools to help you complete the task.` }])
@@ -62,11 +61,6 @@ export class Agent {
     return new Agent(config);
   }
 
-  public setLLM(llm: LLMInterface) {
-    this.llm = llm;
-    return this
-  }
-
   public async generate(prompt: string, config?: LLMConfig) {
     if (!this.llm) {
       throw new Error(`Agent: ${this.name} LLM is not initialized`);
@@ -81,8 +75,7 @@ export class Agent {
       messages,
       config: {
         ...config,
-        tools,
-        stream: false,
+        tools
       }
     });
 
