@@ -140,3 +140,6 @@ dist
 
 # Macbook
 .DS_Store
+
+# let's ignore local server we installed.
+demo/servers/community/

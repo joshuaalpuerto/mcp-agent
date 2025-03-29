@@ -76,17 +76,26 @@ export class LLMFireworks implements LLMInterface {
 
   private async handleStreamResponse(stream: AsyncIterable<OpenAI.ChatCompletionChunk>): Promise<LLMResult> {
     let contentChunk = '';
-    let toolCallChunks = ''
+    let toolCall: OpenAI.ChatCompletionMessageToolCall | undefined;
     let usage: OpenAI.CompletionUsage | undefined;
     let finishReason: string | undefined;
 
     for await (const chunk of stream) {
       contentChunk += (chunk.choices[0]?.delta?.content || '');
-      toolCallChunks += (chunk.choices[0]?.delta?.tool_calls || '')
+      if (chunk.choices[0]?.delta?.tool_calls?.length) {
+        if (!toolCall) {
+          // When the first tool call is received, we need to initialize the tool call object which have initial id, type and function.name
+          toolCall = chunk.choices[0].delta.tool_calls[0] as OpenAI.ChatCompletionMessageToolCall;
+        }
+        // function argumetn might come in multiple chunks, so we need to concatenate them
+        toolCall.function.arguments += chunk.choices[0].delta.tool_calls[0].function?.arguments || ''
+
+        console.log('toolCall', toolCall);
+      }
       usage = chunk.usage || undefined
       finishReason = chunk.choices[0]?.finish_reason || undefined
     }
-    return { content: contentChunk, toolCalls: JSON.parse(toolCallChunks ?? []), usage, finishReason }
+    return { content: contentChunk, toolCalls: toolCall ? [toolCall] : [], usage, finishReason }
   }
 
   private handleError(error: any): Error {

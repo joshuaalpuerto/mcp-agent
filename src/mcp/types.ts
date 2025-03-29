@@ -3,7 +3,7 @@ type StdioServerConfig = {
   name: string;
   type: 'stdio';
   command: string;
-  args: string[];
+  args?: string[];
 }
 
 type SSEServerConfig = {

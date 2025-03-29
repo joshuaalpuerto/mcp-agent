@@ -57,6 +57,7 @@ class MCPConnectionManager {
 
   private async connectClient(id: string, transport: Transport, connectAttempts: number = 0): Promise<Client | void> {
     try {
+      console.log(`Connecting to server: ${id}`);
       // Create a new client
       const client = new Client(
         { name: `multi-server-client-${id}`, version: '1.0.0' },
