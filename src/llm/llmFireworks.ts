@@ -89,8 +89,6 @@ export class LLMFireworks implements LLMInterface {
         }
         // function argumetn might come in multiple chunks, so we need to concatenate them
         toolCall.function.arguments += chunk.choices[0].delta.tool_calls[0].function?.arguments || ''
-
-        console.log('toolCall', toolCall);
       }
       usage = chunk.usage || undefined
       finishReason = chunk.choices[0]?.finish_reason || undefined
