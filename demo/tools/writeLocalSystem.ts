@@ -16,6 +16,7 @@ export const writeLocalSystem: FunctionToolInterface = {
         description: 'The content to write to the file',
       },
     },
+    required: ['path', 'content'],
   },
   execute: async (args: any): Promise<CallToolResult> => {
     const { path, content } = args;

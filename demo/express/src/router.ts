@@ -14,7 +14,8 @@ function createRouter() {
     const { topic } = req.query as { topic: string };
     const llm = new LLMFireworks("accounts/fireworks/models/deepseek-v3", {
       maxTokens: 2048,
-      temperature: 0.1
+      temperature: 0.1,
+      stream: true
     })
 
     const exaServerConfig: ServerConfig = {
@@ -32,11 +33,12 @@ function createRouter() {
       name: "researcher",
       description: `Your expertise is to find information in the web`,
       serverConfigs: [exaServerConfig],
+      llm,
     });
 
     const editor = await Agent.initialize({
       name: "editor",
-      description: `Your expertise to review the information and make it more comprehensive.`,
+      description: `Your expertise is to review the information and make it more comprehensive.`,
       serverConfigs: [exaServerConfig],
       llm,
     });
