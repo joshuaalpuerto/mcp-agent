@@ -46,6 +46,7 @@ async function runOrchestrator() {
   });
 
   const researcher = await Agent.initialize({
+    llm,
     name: "researcher",
     description: `Your expertise is to find information.`,
     serverConfigs: [ // Example MCP Server Configurations
@@ -69,6 +70,7 @@ async function runOrchestrator() {
   });
 
   const writer = await Agent.initialize({
+    llm
     name: "writer",
     description: `Your expertise is to write information to a file.`,
     functions: [writeLocalSystem], // Example local function tool
