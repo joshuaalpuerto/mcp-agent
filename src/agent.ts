@@ -66,45 +66,41 @@ export class Agent {
       throw new Error(`Agent: ${this.name} LLM is not initialized`);
     }
 
-    let messages: OpenAI.ChatCompletionMessageParam[] = [
-      { role: 'user', content: prompt },
-    ]
+
+    this.history.append({ role: 'user', content: prompt });
 
     const tools = await this.listTools();
     const result = await this.llm.generate({
-      messages,
+      messages: [...this.history.get()],
       config: {
         ...config,
         tools
       }
     });
 
-    messages.push({
+    this.history.append({
       role: 'assistant',
       content: result.content,
       tool_calls: result.toolCalls,
     })
 
     if ((result.finishReason === 'tool_calls' || result.finishReason === 'function_call') && result.toolCalls?.length) {
-      const toolCall = result.toolCalls[0];
-      const toolResult = await this.callTool(toolCall.function.name, typeof toolCall.function.arguments === 'string'
-        ? JSON.parse(toolCall.function.arguments)
-        : toolCall.function.arguments || {});
+      for (const toolCall of result.toolCalls) {
+        const toolResult = await this.callTool(toolCall.function.name, typeof toolCall.function.arguments === 'string'
+          ? JSON.parse(toolCall.function.arguments)
+          : toolCall.function.arguments || {});
 
-      if (!toolResult.content.length) {
-        throw new Error(`Tool: ${toolCall.function.name} call failed`);
+        if (!toolResult.content.length) {
+          throw new Error(`Tool: ${toolCall.function.name} call failed`);
+        }
+
+        this.history.append({
+          role: 'tool',
+          content: JSON.stringify(toolResult) as string,
+          tool_call_id: toolCall.id,
+        })
       }
-
-      messages.push({
-        role: 'tool',
-        content: JSON.stringify(toolResult) as string,
-        tool_call_id: toolCall.id,
-      })
     }
-
-
-    this.history.extend(messages);
-
     return this.history.get();
   }
 

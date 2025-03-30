@@ -47,7 +47,7 @@ class Orchestrator {
       status: PlanStatus.InProgress,
     };
 
-    const prompt = await this.prepareFullPlanPrompt(objective, planResult);
+    const prompt = await this.prepareFullPlanPrompt(objective);
     const plan: PlanResult = await this.planner.generateStructuredResult(prompt, {
       responseFormat: fullPlanSchemaReponseFormat as OpenAI.ResponseFormatJSONSchema
     });
@@ -73,7 +73,8 @@ ${planResultInfo}`);
       tasks: [],
       result: '',
     };
-    const tasks = step.tasks.map(async task => {
+
+    for (const task of step.tasks) {
       const agent = this.agents[task.agent]
       if (!agent) {
         throw new Error(`No agent found matching ${task.agent}`);
@@ -87,24 +88,19 @@ ${planResultInfo}`);
       });
 
       const result = await agent.generateStr(context);
-      return {
+      stepResult.tasks.push({
         ...task,
         result: result,
-      };
-    });
-
-    stepResult.tasks = await Promise.all(tasks);
+      });
+    }
 
     return stepResult;
   }
 
   async prepareFullPlanPrompt(
     objective: string,
-    planResult: PlanResult,
   ): Promise<string> {
     const agentsInfo = await this._formatAgentsInfo();
-    const planResultInfo = await this._formatPlanResultInfo(planResult);
-
 
     return generateFullPlanPrompt({
       objective: objective,

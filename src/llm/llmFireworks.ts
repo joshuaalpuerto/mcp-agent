@@ -55,7 +55,15 @@ export class LLMFireworks implements LLMInterface {
           ...commonConfig,
           stream: true,
         } as OpenAI.ChatCompletionCreateParamsStreaming);
-        return this.handleStreamResponse(completion);
+
+        const result = await this.handleStreamResponse(completion);
+
+        return {
+          content: result.content,
+          usage: result.usage,
+          toolCalls: result.toolCalls,
+          finishReason: result.finishReason,
+        }
       } else {
         const completion: OpenAI.ChatCompletion = await this.client.chat.completions.create({
           ...commonConfig,
@@ -76,24 +84,29 @@ export class LLMFireworks implements LLMInterface {
 
   private async handleStreamResponse(stream: AsyncIterable<OpenAI.ChatCompletionChunk>): Promise<LLMResult> {
     let contentChunk = '';
-    let toolCall: OpenAI.ChatCompletionMessageToolCall | undefined;
+    let toolCall: Record<number, OpenAI.ChatCompletionMessageToolCall> | undefined = {};
     let usage: OpenAI.CompletionUsage | undefined;
     let finishReason: string | undefined;
 
-    for await (const chunk of stream) {
-      contentChunk += (chunk.choices[0]?.delta?.content || '');
-      if (chunk.choices[0]?.delta?.tool_calls?.length) {
-        if (!toolCall) {
-          // When the first tool call is received, we need to initialize the tool call object which have initial id, type and function.name
-          toolCall = chunk.choices[0].delta.tool_calls[0] as OpenAI.ChatCompletionMessageToolCall;
+    return new Promise(async (resolve) => {
+      for await (const chunk of stream) {
+        contentChunk += (chunk.choices[0]?.delta?.content || '');
+        if (chunk.choices[0]?.delta?.tool_calls?.length) {
+          // LLM could return multiple tool_calls so we need to register them in their index.
+          const chunkToolCall = chunk.choices[0].delta.tool_calls[0] as OpenAI.ChatCompletionMessageToolCall & { index: number };
+          if (!toolCall?.[chunkToolCall.index]) {
+            // When the first tool call is received, we need to initialize the tool call object which have initial id, type and function.name
+            toolCall[chunkToolCall.index] = chunk.choices[0].delta.tool_calls[0] as OpenAI.ChatCompletionMessageToolCall;
+          }
+          // function argumetn might come in multiple chunks, so we need to concatenate them
+          toolCall[chunkToolCall.index].function.arguments += chunk.choices[0].delta.tool_calls[0].function?.arguments || ''
         }
-        // function argumetn might come in multiple chunks, so we need to concatenate them
-        toolCall.function.arguments += chunk.choices[0].delta.tool_calls[0].function?.arguments || ''
+        usage = chunk.usage || undefined
+        finishReason = chunk.choices[0]?.finish_reason || undefined
       }
-      usage = chunk.usage || undefined
-      finishReason = chunk.choices[0]?.finish_reason || undefined
-    }
-    return { content: contentChunk, toolCalls: toolCall ? [toolCall] : [], usage, finishReason }
+
+      resolve({ content: contentChunk, toolCalls: toolCall ? Object.values(toolCall) : [], usage, finishReason })
+    })
   }
 
   private handleError(error: any): Error {
