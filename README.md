@@ -8,6 +8,12 @@ This library aims to bring the powerful patterns and architecture of `mcp-agent`
 
 ## Installation
 
+First, create or update your `.npmrc` file with:
+```
+@joshuaalpuerto:registry=https://npm.pkg.github.com
+```
+
+Then
 ```bash
 npm install @joshuaalpuerto/mcp-agent@1.0.0
 ```

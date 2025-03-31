@@ -39,7 +39,7 @@
   "bugs": {
     "url": "https://github.com/joshuaalpuerto/mcp-agent/issues"
   },
-  "homepage": "https://github.com/joshuaalpuerto/fp-light#readme",
+  "homepage": "https://github.com/joshuaalpuerto/mcp-agent#readme",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   }
