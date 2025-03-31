@@ -1,6 +1,6 @@
 {
   "name": "@joshuaalpuerto/mcp-agent",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -41,6 +41,6 @@
   },
   "homepage": "https://github.com/joshuaalpuerto/fp-light#readme",
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com/@joshuaalpuerto"
+    "registry": "https://npm.pkg.github.com"
   }
 }
