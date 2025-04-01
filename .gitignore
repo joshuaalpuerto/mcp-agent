@@ -143,3 +143,6 @@ dist
 
 # let's ignore local server we installed.
 demo/servers/community/
+
+# Ignore personal standalone server for now
+demo/standalone/personal/
