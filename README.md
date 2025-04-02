@@ -15,7 +15,7 @@ First, create or update your `.npmrc` file with:
 
 Then
 ```bash
-npm install @joshuaalpuerto/mcp-agent@1.0.0
+npm install @joshuaalpuerto/mcp-agent
 ```
 
 ## Key Capabilities
