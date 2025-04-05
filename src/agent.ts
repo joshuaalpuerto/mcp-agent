@@ -11,16 +11,19 @@ interface AgentConfig {
   history?: Memory<OpenAI.ChatCompletionMessageParam>;
   functions?: FunctionToolInterface[];
   llm: LLMInterface;
+  maxIterations?: number;
 }
 
 export class Agent {
   public name: string;
   public description: string;
+  public serverConfigs?: ServerConfig[];
+  public functions?: Record<string, FunctionToolInterface>;
   private history: Memory<OpenAI.ChatCompletionMessageParam>;
   private llm: LLMInterface | null;
   private aggregator?: MCPServerAggregator;
-  public serverConfigs?: ServerConfig[];
-  public functions?: Record<string, FunctionToolInterface>;
+  private maxIterations: number;
+  private systemPrompt: string;
 
   constructor(config: AgentConfig & {
     // optional aggregator
@@ -31,6 +34,7 @@ export class Agent {
     this.description = config.description;
     this.serverConfigs = config.serverConfigs;
     this.llm = config.llm;
+    this.maxIterations = config.maxIterations || 5;
 
     if (config.functions?.length) {
       this.functions = {}
@@ -43,10 +47,8 @@ export class Agent {
       this.aggregator = config.aggregator;
     }
 
-
-
     this.history = config.history || new SimpleMemory<OpenAI.ChatCompletionMessageParam>();
-    this.history.set([{ role: 'system', content: `You are a ${this.name}. ${this.description} \n\n You have ability to use tools to help you complete the task.` }])
+    this.systemPrompt = `You are a ${this.name}. ${this.description} \n\n You have ability to use tools to help you complete the task.`
   }
 
   static async initialize(config: AgentConfig) {
@@ -66,41 +68,56 @@ export class Agent {
       throw new Error(`Agent: ${this.name} LLM is not initialized`);
     }
 
+    let messages: OpenAI.ChatCompletionMessageParam[] = [
+      { role: 'system', content: this.systemPrompt },
+      { role: 'user', content: prompt },
+    ]
+    let iterations = 0;
 
-    this.history.append({ role: 'user', content: prompt });
-
-    const tools = await this.listTools();
-    const result = await this.llm.generate({
-      messages: [...this.history.get()],
-      config: {
-        ...config,
-        tools
-      }
-    });
-
-    this.history.append({
-      role: 'assistant',
-      content: result.content,
-      tool_calls: result.toolCalls,
-    })
-
-    if ((result.finishReason === 'tool_calls' || result.finishReason === 'function_call') && result.toolCalls?.length) {
-      for (const toolCall of result.toolCalls) {
-        const toolResult = await this.callTool(toolCall.function.name, typeof toolCall.function.arguments === 'string'
-          ? JSON.parse(toolCall.function.arguments)
-          : toolCall.function.arguments || {});
-
-        if (!toolResult.content.length) {
-          throw new Error(`Tool: ${toolCall.function.name} call failed`);
+    while (iterations < this.maxIterations) {
+      const tools = await this.listTools();
+      const result = await this.llm.generate({
+        messages: messages,
+        config: {
+          ...config,
+          tools
         }
+      });
 
+      messages.push({
+        role: 'assistant',
+        content: result.content,
+        tool_calls: result.toolCalls,
+      })
+
+      if ((result.finishReason === 'tool_calls' || result.finishReason === 'function_call') && result.toolCalls?.length) {
+        for (const toolCall of result.toolCalls) {
+          const toolResult = await this.callTool(toolCall.function.name, typeof toolCall.function.arguments === 'string'
+            ? JSON.parse(toolCall.function.arguments)
+            : toolCall.function.arguments || {});
+
+          if (!toolResult.content.length) {
+            throw new Error(`Tool: ${toolCall.function.name} call failed`);
+          }
+
+          messages.push({
+            role: 'tool',
+            content: JSON.stringify(toolResult) as string,
+            tool_call_id: toolCall.id,
+          })
+        }
+      } else {
+        // We only care about the actual result from the task
         this.history.append({
-          role: 'tool',
-          content: JSON.stringify(toolResult) as string,
-          tool_call_id: toolCall.id,
+          role: 'assistant',
+          content: result.content,
         })
+        break;
       }
+
+      iterations++;
     }
+
     return this.history.get();
   }
 
