@@ -8,6 +8,7 @@ import { PlanResult, PlanStepResult, PlanTaskResult, PlanStatus } from './types'
 class Orchestrator {
   llm: LLMInterface;
   planner: Agent;
+  synthesizer: Agent;
   agents: Record<string, Agent>;
   maxIterations: number;
 
@@ -15,6 +16,7 @@ class Orchestrator {
     llm: LLMInterface,
     agents: Agent[],
     planner?: Agent,
+    synthesizer?: Agent,
     maxIterations?: number,
   }) {
     this.llm = config.llm;
@@ -26,6 +28,14 @@ class Orchestrator {
       description: `
                 You are an expert planner. Given an objective task and a list of Agents (which are collections of servers), your job is to break down the objective into a series of steps,
                 which can be performed by LLMs with access to the servers or agents.
+                `,
+      llm: config.llm,
+    });
+
+    this.synthesizer = config.synthesizer || new Agent({
+      name: "LLM Orchestration Synthesizer",
+      description: `
+                You are an expert synthesizer. Given a list of steps and their results, your job is to synthesize the results into a cohesive result.
                 `,
       llm: config.llm,
     });
@@ -58,8 +68,7 @@ class Orchestrator {
     }
 
     const planResultInfo = await this._formatPlanResultInfo(planResult);
-    return this.planner.generateStr(`Synthesize the results of these parallel tasks into a cohesive result:
-${planResultInfo}`);
+    return this.synthesizer.generateStr(planResultInfo);
   }
 
   async executeStep(
