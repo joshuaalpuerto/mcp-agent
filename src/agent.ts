@@ -68,9 +68,14 @@ export class Agent {
       throw new Error(`Agent: ${this.name} LLM is not initialized`);
     }
 
+    this.history.append({
+      role: 'user',
+      content: prompt,
+    })
+
     let messages: OpenAI.ChatCompletionMessageParam[] = [
       { role: 'system', content: this.systemPrompt },
-      { role: 'user', content: prompt },
+      ...this.history.get(),
     ]
     let iterations = 0;
 
