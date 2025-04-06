@@ -1,16 +1,20 @@
 name: Publish package to GitHub Packages
 on:
-  release:
-    types: [published]
+  push:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          # fetch all tags so we can check if the version has been bumped
+          fetch-depth: 0
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
@@ -29,8 +33,39 @@ jobs:
       
       - name: Build
         run: pnpm run build
-      
+
+      - name: Check if package version has been bumped
+        id: version_check
+        run: |
+          current_version=$(jq -r '.version' package.json)
+          echo "Current version: $current_version"
+
+          git fetch --tags
+          previous_version=$(git tag --sort=-v:refname | head -n 1 || echo "none")
+          echo "Previous version: $previous_version"
+
+          if [ "$previous_version" == "v$current_version" ]; then
+            echo "Version has not been bumped. Exiting."
+            exit 1
+          else
+            echo "current_version=$current_version" >> $GITHUB_OUTPUT
+          fi
+
       - name: Publish to GitHub Packages
+        # Only run this step if all previous steps were successful
+        # This is a GitHub Actions conditional expression that checks the status
+        # of previous steps in the workflow
+        if: success()
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        if: success()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git tag "v${{ steps.version_check.outputs.current_version }}"
+          git push origin "v${{ steps.version_check.outputs.current_version }}"
+          release_notes=$(git log -1 --pretty=%B)
+          gh release create "v${{ steps.version_check.outputs.current_version }}" --title "v${{ steps.version_check.outputs.current_version }}" --notes "${release_notes}"
