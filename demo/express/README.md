@@ -65,6 +65,7 @@ const app = express();
       name: "researcher",
       description: `Your expertise is to find information in the web`,
       serverConfigs: [exaServerConfig],
+      llm,
     });
 
     const editor = await Agent.initialize({
