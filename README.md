@@ -98,7 +98,7 @@ async function runOrchestrator() {
 runOrchestrator().catch(console.error);
 ```
 
-[Watch the demo-output video](https://github.com/joshuaalpuerto/mcp-agent/raw/main/static/logs.mp4)
+https://github.com/user-attachments/assets/122a388b-0dc8-4984-b189-22408a308d7f
 
 **To run this example:**
 
