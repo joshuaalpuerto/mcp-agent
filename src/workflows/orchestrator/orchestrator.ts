@@ -3,7 +3,7 @@ import { Agent } from '../../agent';
 import { LLMInterface } from '../../llm/types';
 import { fullPlanSchemaReponseFormat, generateFullPlanPrompt, generatePlanObjectivePrompt, generateTaskPrompt } from './prompt';
 import { PlanResult, PlanStepResult, PlanTaskResult, PlanStatus } from './types';
-
+import { Logger, LogLevel } from '../../logger';
 
 class Orchestrator {
   llm: LLMInterface;
@@ -11,6 +11,7 @@ class Orchestrator {
   synthesizer: Agent;
   agents: Record<string, Agent>;
   maxIterations: number;
+  logger: Logger;
 
   constructor(config: {
     llm: LLMInterface,
@@ -18,9 +19,11 @@ class Orchestrator {
     planner?: Agent,
     synthesizer?: Agent,
     maxIterations?: number,
+    logger?: Logger,
   }) {
     this.llm = config.llm;
     this.maxIterations = config.maxIterations || 2;
+    this.logger = config.logger || Logger.getInstance();
 
     // load agent as it is as we don't need mcp here.
     this.planner = config.planner || new Agent({
@@ -57,6 +60,7 @@ class Orchestrator {
       status: PlanStatus.InProgress,
     };
 
+    this.logger.log(LogLevel.INFO, `Generating full plan for objective: ${objective}`);
     const prompt = await this.prepareFullPlanPrompt(objective);
     const plan: PlanResult = await this.planner.generateStructuredResult(prompt, {
       responseFormat: fullPlanSchemaReponseFormat as OpenAI.ResponseFormatJSONSchema
@@ -97,6 +101,7 @@ class Orchestrator {
       });
 
       const result = await agent.generateStr(context);
+      this.logger.log(LogLevel.INFO, `[Agent: ${task.agent}]\nTask: ${task.description}\nResult: ${result}`);
       stepResult.tasks.push({
         ...task,
         result: result,

@@ -2,6 +2,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index';
 import MCPConnectionManager from './mcpConnectionManager';
 import { CallToolResult, Tool } from '../tools/types';
 import { ServerConfig } from './types';
+import { Logger, LogLevel } from '../logger';
 // It's called aggregator because it's aggregating tools from multiple servers
 // agent has 1:1 connection with aggregator
 class MCPServerAggregator {
@@ -14,10 +15,12 @@ class MCPServerAggregator {
   }> = new Map();
   private serverConfigs: ServerConfig[];
   private connectionManager: MCPConnectionManager;
+  private logger: Logger;
 
   constructor({ serverConfigs }: { serverConfigs: ServerConfig[] }) {
     this.serverConfigs = serverConfigs;
     this.connectionManager = MCPConnectionManager.getInstance();
+    this.logger = Logger.getInstance();
   }
 
   static async load(serverConfigs: ServerConfig[]): Promise<MCPServerAggregator> {
@@ -42,7 +45,7 @@ class MCPServerAggregator {
           }
         });
       } catch (error) {
-        console.error(error)
+        this.logger.log(LogLevel.ERROR, `Error adding server "${serverConfig.name}": ${error}`);
         throw new Error(`Error adding server "${serverConfig.name}": ${error}`);
       }
     }
@@ -84,8 +87,7 @@ class MCPServerAggregator {
     if (!client) {
       throw new Error(`Client for server ${toolInfo.id} not found`);
     }
-
-    console.log(`Executing tool ${toolName} on server ${toolInfo.id}`);
+    
     return await client.callTool({ name: toolName, arguments: args });
   }
 
@@ -94,7 +96,7 @@ class MCPServerAggregator {
       try {
         await this.connectionManager.disconnectServer(id);
       } catch (error) {
-        console.error(`Error closing server ${id}:`, error);
+        this.logger.log(LogLevel.ERROR, `Error closing server ${id}: ${error}`);
       }
     });
 

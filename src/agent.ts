@@ -4,6 +4,7 @@ import { SimpleMemory, Memory } from './memory';
 import { LLMConfig, LLMInterface } from './llm/types';
 import { FunctionToolInterface } from './tools/types';
 import { ServerConfig } from './mcp/types';
+import { Logger, LogLevel } from './logger';
 interface AgentConfig {
   name: string;
   description: string;
@@ -12,6 +13,7 @@ interface AgentConfig {
   functions?: FunctionToolInterface[];
   llm: LLMInterface;
   maxIterations?: number;
+  logger?: Logger;
 }
 
 export class Agent {
@@ -24,12 +26,14 @@ export class Agent {
   private aggregator?: MCPServerAggregator;
   private maxIterations: number;
   private systemPrompt: string;
+  private logger: Logger;
 
   constructor(config: AgentConfig & {
     // optional aggregator
     // this is used when agent is used in a workflow that doesn't need to access MCP
     aggregator?: MCPServerAggregator;
   }) {
+    this.logger = config.logger || Logger.getInstance();
     this.name = config.name;
     this.description = config.description;
     this.serverConfigs = config.serverConfigs;
@@ -68,6 +72,8 @@ export class Agent {
       throw new Error(`Agent: ${this.name} LLM is not initialized`);
     }
 
+    this.logger.log(LogLevel.INFO, `[Agent: ${this.name}] woking on user task: ${prompt}`);
+
     this.history.append({
       role: 'user',
       content: prompt,
@@ -97,6 +103,7 @@ export class Agent {
 
       if ((result.finishReason === 'tool_calls' || result.finishReason === 'function_call') && result.toolCalls?.length) {
         for (const toolCall of result.toolCalls) {
+          this.logger.log(LogLevel.INFO, `[Agent: ${this.name}] executing tool: ${toolCall.function.name}`);
           const toolResult = await this.callTool(toolCall.function.name, typeof toolCall.function.arguments === 'string'
             ? JSON.parse(toolCall.function.arguments)
             : toolCall.function.arguments || {});
@@ -105,13 +112,16 @@ export class Agent {
             throw new Error(`Tool: ${toolCall.function.name} call failed`);
           }
 
+          const toolResultContent = JSON.stringify(toolResult) as string
+          this.logger.log(LogLevel.INFO, `[Agent: ${this.name}] tool: ${toolCall.function.name} call result: ${toolResultContent}`);
           messages.push({
             role: 'tool',
-            content: JSON.stringify(toolResult) as string,
+            content: toolResultContent,
             tool_call_id: toolCall.id,
           })
         }
       } else {
+        this.logger.log(LogLevel.INFO, `[Agent: ${this.name}] final response: ${result.content}`);
         // We only care about the actual result from the task
         this.history.append({
           role: 'assistant',
