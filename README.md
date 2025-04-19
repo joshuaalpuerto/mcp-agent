@@ -98,6 +98,8 @@ async function runOrchestrator() {
 runOrchestrator().catch(console.error);
 ```
 
+<video src="./static/logs.mp4" controls></video>
+
 **To run this example:**
 
 1.  **Install Dependencies:**

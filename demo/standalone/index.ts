@@ -30,9 +30,14 @@ async function runOrchestrator() {
         args: ['--loader', 'ts-node/esm', path.resolve(__dirname, '..', 'servers', 'readLocalFileSystem.ts'),]
       },
       {
-        name: "exa-mcp-server",
-        type: "stdio",
-        command: "exa-mcp-server",
+        name: "search_web",
+        type: "ws",
+        url: createSmitheryUrl(
+          "https://server.smithery.ai/exa/ws",
+          {
+            exaApiKey: process.env.EXA_API_KEY
+          }
+        )
       }
     ],
   });
