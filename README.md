@@ -98,7 +98,7 @@ async function runOrchestrator() {
 runOrchestrator().catch(console.error);
 ```
 
-<video src="./static/logs.mp4" controls></video>
+[Watch the demo-output video](https://github.com/joshuaalpuerto/mcp-agent/raw/main/static/logs.mp4)
 
 **To run this example:**
 
