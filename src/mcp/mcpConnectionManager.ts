@@ -3,6 +3,7 @@ import { Transport } from '@modelcontextprotocol/sdk/shared/transport';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio';
 import { WebSocketClientTransport } from "@modelcontextprotocol/sdk/client/websocket.js"
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { type ServerConfig } from './types';
 import { Logger, LogLevel } from '../logger';
 
@@ -49,6 +50,10 @@ class MCPConnectionManager {
       case 'sse':
         const sseUrl = config.url instanceof URL ? config.url : new URL(config.url);
         transport = new SSEClientTransport(sseUrl);
+        break;
+      case 'http':
+        const httpUrl = config.url instanceof URL ? config.url : new URL(config.url);
+        transport = new StreamableHTTPClientTransport(httpUrl);
         break;
     }
 

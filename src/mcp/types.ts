@@ -12,10 +12,16 @@ type SSEServerConfig = {
   url: string | URL;
 }
 
+type StreamableHTTPConfig = {
+  name: string;
+  type: 'http';
+  url: string | URL;
+}
+
 type WebSocketServerConfig = {
   name: string;
   type: 'ws';
   url: string | URL;
 }
 
-export type ServerConfig = StdioServerConfig | SSEServerConfig | WebSocketServerConfig
+export type ServerConfig = StdioServerConfig | SSEServerConfig | WebSocketServerConfig | StreamableHTTPConfig

@@ -120,6 +120,7 @@ For a complete Express.js integration example with multi-agent orchestration, ch
 *   **Agent:** The fundamental building block. An `Agent` is an autonomous entity with a specific role, instructions, and access to tools.
 *   **MCP Server Aggregator (`MCPServerAggregator`):** Manages connections to multiple MCP servers, providing a unified interface for agents to access tools.
 *   **MCP Connection Manager (`MCPConnectionManager`):** Handles the lifecycle and reuse of MCP server connections, optimizing resource usage.
+    * **Supported Transport**: `stdio`, `sse`, `streamable-http` & `websockets`
 *   **LLM Integration (`LLMInterface`, `LLMFireworks`):**  Abstracts interaction with Large Language Models.  `LLMFireworks` is an example implementation for Fireworks AI models.
 *   **Tools:**  Functions or MCP server capabilities that Agents can use to perform actions. Tools can be:
     *   **MCP Server Tools:** Capabilities exposed by external MCP servers (e.g., file system access, web search).

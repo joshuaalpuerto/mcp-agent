@@ -1,6 +1,6 @@
 {
   "name": "@joshuaalpuerto/mcp-agent",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -18,7 +18,7 @@
   },
   "keywords": [],
   "dependencies": {
-    "@modelcontextprotocol/sdk": "1.7.0",
+    "@modelcontextprotocol/sdk": "^1.10.2",
     "@smithery/sdk": "1.0.2",
     "dotenv": "16.4.7",
     "langsmith": "0.3.14",
