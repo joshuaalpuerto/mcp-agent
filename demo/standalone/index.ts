@@ -31,7 +31,7 @@ async function runOrchestrator() {
       },
       {
         name: "search_web",
-        type: "ws",
+        type: "http",
         url: createSmitheryUrl(
           "https://server.smithery.ai/exa/ws",
           {

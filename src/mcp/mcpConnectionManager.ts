@@ -5,7 +5,7 @@ import { WebSocketClientTransport } from "@modelcontextprotocol/sdk/client/webso
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { type ServerConfig } from './types';
-import { Logger, LogLevel } from '../logger';
+import { Logger } from '../logger';
 
 class MCPConnectionManager {
   private static instance: MCPConnectionManager;
@@ -68,7 +68,7 @@ class MCPConnectionManager {
 
   private async connectClient(id: string, transport: Transport, connectAttempts: number = 0): Promise<Client | void> {
     try {
-      this.logger.log(LogLevel.INFO, `Connecting to server: ${id}`);
+      this.logger.info(`Connecting to server: ${id}`);
       // Create a new client
       const client = new Client(
         { name: `multi-server-client-${id}`, version: '1.0.0' },
@@ -76,16 +76,16 @@ class MCPConnectionManager {
       );
       // Connect and initialize
       await client.connect(transport);
-      this.logger.log(LogLevel.INFO, `Connected to server: ${id}`);
+      this.logger.info(`Connected to server: ${id}`);
       return client;
     } catch (error) {
       if (connectAttempts >= this.maxReconnectAttempts) {
-        this.logger.log(LogLevel.ERROR, `Max reconnection attempts reached for server ${id}`);
+        this.logger.error(`Max reconnection attempts reached for server ${id}`);
         throw error;
       }
 
       const delay = this.reconnectDelay * Math.pow(2, connectAttempts - 1); // Exponential backoff
-      this.logger.log(LogLevel.INFO, `Attempting to reconnect to server ${id} (attempt ${connectAttempts + 1}) in ${delay}ms`);
+      this.logger.info(`Attempting to reconnect to server ${id} (attempt ${connectAttempts + 1}) in ${delay}ms`);
       await new Promise(resolve => setTimeout(resolve, delay));
       return this.connectClient(id, transport, connectAttempts + 1);
     }
@@ -102,16 +102,16 @@ class MCPConnectionManager {
   async disconnectServer(id: string): Promise<void> {
     const client = this.runningServers.get(id);
     if (!client) {
-      this.logger.log(LogLevel.INFO, `Server ${id} not found or already disconnected`);
+      this.logger.info(`Server ${id} not found or already disconnected`);
       return;
     }
 
     try {
       await client.close();
       this.runningServers.delete(id);
-      this.logger.log(LogLevel.INFO, `Disconnected from server: ${id}`);
+      this.logger.info(`Disconnected from server: ${id}`);
     } catch (error) {
-      this.logger.log(LogLevel.ERROR, `Error disconnecting from server ${id}: ${error}`);
+      this.logger.error(`Error disconnecting from server ${id}: ${error}`);
     }
   }
 
@@ -119,9 +119,9 @@ class MCPConnectionManager {
     const disconnections = Array.from(this.runningServers.entries()).map(async ([id, client]) => {
       try {
         await client.close();
-        this.logger.log(LogLevel.INFO, `Disconnected from server: ${id}`);
+        this.logger.info(`Disconnected from server: ${id}`);
       } catch (error) {
-        this.logger.log(LogLevel.ERROR, `Error disconnecting from server ${id}: ${error}`);
+        this.logger.error(`Error disconnecting from server ${id}: ${error}`);
       }
     });
 
@@ -137,7 +137,7 @@ class MCPConnectionManager {
           const tools = await client.listTools();
           return { serverId: id, tools: tools.tools };
         } catch (error) {
-          this.logger.log(LogLevel.ERROR, `Error getting tools from server ${id}: ${error}`);
+          this.logger.error(`Error getting tools from server ${id}: ${error}`);
           return { serverId: id, tools: [] };
         }
       })

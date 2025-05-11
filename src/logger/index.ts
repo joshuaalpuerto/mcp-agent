@@ -26,77 +26,29 @@ export interface LogEntry {
   context?: Record<string, unknown>;
 }
 
+export interface LoggerInterface {
+  info(message: string, context?: any): void;
+  warn(message: string, context?: any): void;
+  error(message: string, context?: any): void;
+  debug(message: string, context?: any): void;
+  log?(level: string, message: string, context?: any): void;
+}
+
 export class Logger {
   private static instance: Logger;
   private logs: LogEntry[] = [];
-  private currentLogLevel: LogLevel = LogLevel.INFO;
+  private logger: LoggerInterface;
 
-  private constructor() { }
+  // default to console logger
+  private constructor(logger: LoggerInterface) {
+    this.logger = logger;
+  }
 
-  public static getInstance(): Logger {
+  public static getInstance(logger: LoggerInterface = console): Logger {
     if (!Logger.instance) {
-      Logger.instance = new Logger();
+      Logger.instance = new Logger(logger);
     }
     return Logger.instance;
-  }
-
-  public setLogLevel(level: LogLevel): void {
-    this.currentLogLevel = level;
-  }
-
-  public log(level: LogLevel, message: string, context?: Record<string, unknown>): void {
-    // Only log if the current log level allows it
-    const logLevels = [LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR];
-    if (logLevels.indexOf(level) >= logLevels.indexOf(this.currentLogLevel)) {
-      const entry: LogEntry = {
-        timestamp: Date.now(),
-        level,
-        message,
-        context
-      };
-
-      this.logs.push(entry);
-      this.outputLog(entry);
-    }
-  }
-
-  private outputLog(entry: LogEntry): void {
-    const formattedTimestamp = new Date(entry.timestamp).toISOString();
-    const contextString = entry.context
-      ? `${COLORS.DIM} | Context: ${util.inspect(entry.context, { depth: null, colors: true })}${COLORS.RESET}`
-      : '';
-
-    let levelColor = COLORS.RESET;
-    let levelTag = entry.level.toUpperCase();
-    let consoleMethod: (...data: any[]) => void = console.log;
-
-    switch (entry.level) {
-      case LogLevel.DEBUG:
-        levelColor = COLORS.BLUE;
-        levelTag = 'DEBUG';
-        consoleMethod = console.debug;
-        break;
-      case LogLevel.INFO:
-        levelColor = COLORS.CYAN;
-        levelTag = 'INFO';
-        consoleMethod = console.info;
-        break;
-      case LogLevel.WARN:
-        levelColor = COLORS.YELLOW;
-        levelTag = 'WARN';
-        consoleMethod = console.warn;
-        break;
-      case LogLevel.ERROR:
-        levelColor = COLORS.RED;
-        levelTag = 'ERROR';
-        consoleMethod = console.error;
-        break;
-    }
-
-    const coloredLevelTag = `${levelColor}[${levelTag}]${COLORS.RESET}`;
-    const coloredTimestamp = `${COLORS.DIM}[${formattedTimestamp}]${COLORS.RESET}`;
-
-    consoleMethod(`${coloredTimestamp} ${coloredLevelTag} ${entry.message}${contextString}`);
   }
 
   public getLogs(level?: LogLevel): LogEntry[] {
@@ -118,5 +70,68 @@ export class Logger {
       `[${new Date(log.timestamp).toISOString()}] [${log.level.toUpperCase()}] ${log.message}` +
       (log.context ? ` | ${JSON.stringify(log.context)}` : '')
     ).join('\n');
+  }
+
+  public info(message: string, context?: any): void {
+    this.log(LogLevel.INFO, message, context);
+  }
+
+  public warn(message: string, context?: any): void {
+    this.log(LogLevel.WARN, message, context);
+  }
+
+  public error(message: string, context?: any): void {
+    this.log(LogLevel.ERROR, message, context);
+  }
+
+  public debug(message: string, context?: any): void {
+    this.log(LogLevel.DEBUG, message, context);
+  }
+
+  private log(level: LogLevel, message: string, context?: any): void {
+    if (level in LogLevel) {
+      const entry: LogEntry = {
+        timestamp: Date.now(),
+        level,
+        message,
+        context
+      };
+      this.outputLog(entry);
+    }
+  }
+
+  private outputLog(entry: LogEntry): void {
+    const formattedTimestamp = new Date(entry.timestamp).toISOString();
+    const contextString = entry.context
+      ? `${COLORS.DIM} | Context: ${util.inspect(entry.context, { depth: null, colors: true })}${COLORS.RESET}`
+      : '';
+
+    let levelColor = COLORS.RESET;
+    let levelTag = entry.level.toUpperCase();
+    let consoleMethod: (...data: any[]) => void = console.log;
+
+    switch (entry.level) {
+      case LogLevel.DEBUG:
+        levelColor = COLORS.BLUE;
+        levelTag = 'DEBUG';
+        break;
+      case LogLevel.INFO:
+        levelColor = COLORS.CYAN;
+        levelTag = 'INFO';
+        break;
+      case LogLevel.WARN:
+        levelColor = COLORS.YELLOW;
+        levelTag = 'WARN';
+        break;
+      case LogLevel.ERROR:
+        levelColor = COLORS.RED;
+        levelTag = 'ERROR';
+        break;
+    }
+
+    const coloredLevelTag = `${levelColor}[${levelTag}]${COLORS.RESET}`;
+    const coloredTimestamp = `${COLORS.DIM}[${formattedTimestamp}]${COLORS.RESET}`;
+
+    this.logger[entry.level](`${coloredTimestamp} ${coloredLevelTag} ${entry.message}${contextString}`);
   }
 }

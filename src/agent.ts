@@ -4,7 +4,7 @@ import { SimpleMemory, Memory } from './memory';
 import { LLMConfig, LLMInterface } from './llm/types';
 import { FunctionToolInterface } from './tools/types';
 import { ServerConfig } from './mcp/types';
-import { Logger, LogLevel } from './logger';
+import { Logger } from './logger';
 interface AgentConfig {
   name: string;
   description: string;
@@ -72,7 +72,7 @@ export class Agent {
       throw new Error(`Agent: ${this.name} LLM is not initialized`);
     }
 
-    this.logger.log(LogLevel.INFO, `[Agent: ${this.name}] woking on user task: ${prompt}`);
+    this.logger.info(`[Agent: ${this.name}] woking on user task: ${prompt}`);
 
     this.history.append({
       role: 'user',
@@ -103,7 +103,7 @@ export class Agent {
 
       if ((result.finishReason === 'tool_calls' || result.finishReason === 'function_call') && result.toolCalls?.length) {
         for (const toolCall of result.toolCalls) {
-          this.logger.log(LogLevel.INFO, `[Agent: ${this.name}] executing tool: ${toolCall.function.name}`);
+          this.logger.info(`[Agent: ${this.name}] executing tool: ${toolCall.function.name}`);
           const toolResult = await this.callTool(toolCall.function.name, typeof toolCall.function.arguments === 'string'
             ? JSON.parse(toolCall.function.arguments)
             : toolCall.function.arguments || {});
@@ -113,7 +113,7 @@ export class Agent {
           }
 
           const toolResultContent = JSON.stringify(toolResult) as string
-          this.logger.log(LogLevel.INFO, `[Agent: ${this.name}] tool: ${toolCall.function.name} call result: ${toolResultContent}`);
+          this.logger.info(`[Agent: ${this.name}] tool: ${toolCall.function.name} call result: ${toolResultContent}`);
           messages.push({
             role: 'tool',
             content: toolResultContent,
@@ -121,7 +121,7 @@ export class Agent {
           })
         }
       } else {
-        this.logger.log(LogLevel.INFO, `[Agent: ${this.name}] final response: ${result.content}`);
+        this.logger.info(`[Agent: ${this.name}] final response: ${result.content}`);
         // We only care about the actual result from the task
         this.history.append({
           role: 'assistant',

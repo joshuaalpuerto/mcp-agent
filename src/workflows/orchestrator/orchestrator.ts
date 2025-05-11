@@ -60,7 +60,7 @@ class Orchestrator {
       status: PlanStatus.InProgress,
     };
 
-    this.logger.log(LogLevel.INFO, `Generating full plan for objective: ${objective}`);
+    this.logger.info(`Generating full plan for objective: ${objective}`);
     const prompt = await this.prepareFullPlanPrompt(objective);
     const plan: PlanResult = await this.planner.generateStructuredResult(prompt, {
       responseFormat: fullPlanSchemaReponseFormat as OpenAI.ResponseFormatJSONSchema
@@ -101,7 +101,7 @@ class Orchestrator {
       });
 
       const result = await agent.generateStr(context);
-      this.logger.log(LogLevel.INFO, `[Agent: ${task.agent}]\nTask: ${task.description}\nResult: ${result}`);
+      this.logger.info(`[Agent: ${task.agent}]\nTask: ${task.description}\nResult: ${result}`);
       stepResult.tasks.push({
         ...task,
         result: result,

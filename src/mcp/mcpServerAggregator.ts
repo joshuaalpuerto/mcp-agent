@@ -45,7 +45,7 @@ class MCPServerAggregator {
           }
         });
       } catch (error) {
-        this.logger.log(LogLevel.ERROR, `Error adding server "${serverConfig.name}": ${error}`);
+        this.logger.error(`Error adding server "${serverConfig.name}": ${error}`);
         throw new Error(`Error adding server "${serverConfig.name}": ${error}`);
       }
     }
@@ -96,7 +96,7 @@ class MCPServerAggregator {
       try {
         await this.connectionManager.disconnectServer(id);
       } catch (error) {
-        this.logger.log(LogLevel.ERROR, `Error closing server ${id}: ${error}`);
+        this.logger.error(`Error closing server ${id}: ${error}`);
       }
     });
 
