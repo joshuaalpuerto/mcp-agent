@@ -33,7 +33,7 @@ async function runOrchestrator() {
         name: "search_web",
         type: "http",
         url: createSmitheryUrl(
-          "https://server.smithery.ai/exa/ws",
+          "https://server.smithery.ai/exa",
           {
             exaApiKey: process.env.EXA_API_KEY
           }
