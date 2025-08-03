@@ -117,9 +117,9 @@ For a complete Express.js integration example with multi-agent orchestration, ch
 
 ## Core Concepts
 
-*   **Agent:** The fundamental building block. An `Agent` is an autonomous entity with a specific role, instructions, and access to tools.
-*   **MCP Server Aggregator (`MCPServerAggregator`):** Manages connections to multiple MCP servers, providing a unified interface for agents to access tools.
-*   **MCP Connection Manager (`MCPConnectionManager`):** Handles the lifecycle and reuse of MCP server connections, optimizing resource usage.
+*   **Agent:** The fundamental building block. An `Agent` is an autonomous entity with a specific role, instructions, and access to tools. Agents can invoke tools to perform actions and interact with external services.
+*   **MCP Server Aggregator (`MCPServerAggregator`):** Manages the tools available to each individual agent. Each agent has its own aggregator that provides access to the specific tools that agent needs. The aggregator acts as a tool provider for its assigned agent.
+*   **MCP Connection Manager (`MCPConnectionManager`):** Central repository that manages the lifecycle and reuse of ALL MCP server connections across the entire application. This is a global collection of all available tools that any agent can potentially use.
     * **Supported Transport**: `stdio`, `sse`, `streamable-http` & `websockets`
 *   **LLM Integration (`LLMInterface`, `LLMFireworks`):**  Abstracts interaction with Large Language Models.  `LLMFireworks` is an example implementation for Fireworks AI models.
 *   **Tools:**  Functions or MCP server capabilities that Agents can use to perform actions. Tools can be:
@@ -132,6 +132,26 @@ For a complete Express.js integration example with multi-agent orchestration, ch
     *   **Parallelization** - coming soon.
     *   **Evaluator-optimizer** - coming soon.
 *   **Memory (`SimpleMemory`):**  Provides basic in-memory message history for conversational agents.
+
+## Architecture: Why Connection Manager + Aggregator?
+
+The framework uses a two-layer architecture to efficiently manage MCP server connections:
+
+**Connection Manager (Global):** 
+- Maintains a single instance of each MCP server connection across the entire application
+- Prevents duplicate server connections when multiple agents need the same tool
+- Example: If Agent1 and Agent2 both need a file system tool, only one file system server is spawned
+
+**Aggregator (Per-Agent):**
+- Each agent has its own aggregator that provides access to its specific set of tools
+- The aggregator references tools from the global connection manager
+- Acts as a tool provider interface for its assigned agent
+
+**Benefits:**
+- **Resource Efficiency:** Avoid spinning multiple instances of the same MCP server
+- **Connection Reuse:** Share server connections across agents when possible
+- **Isolation:** Each agent only sees the tools it's configured to use
+- **Scalability:** Add new agents without duplicating existing server connections
 
 ## Acknowledgements
 
