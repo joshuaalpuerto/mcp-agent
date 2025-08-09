@@ -7,15 +7,8 @@
 This library aims to bring the powerful patterns and architecture of `mcp-agent` to the JavaScript ecosystem, enabling developers to create robust and controllable AI agents that can interact with MCP-aware services and tools.
 
 ## Installation
-
-First, create or update your `.npmrc` file with:
-```
-@joshuaalpuerto:registry=https://npm.pkg.github.com
-```
-
-Then
 ```bash
-npm install @joshuaalpuerto/mcp-agent
+npm install @joshuacalpuerto/mcp-agent
 ```
 
 ## Key Capabilities
