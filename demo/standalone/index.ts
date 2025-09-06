@@ -1,6 +1,5 @@
 
 import dotenv from 'dotenv';
-import { createSmitheryUrl } from "@smithery/sdk/config"
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { Agent, LLMFireworks, Orchestrator } from '../../src';
@@ -32,12 +31,7 @@ async function runOrchestrator() {
       {
         name: "search_web",
         type: "http",
-        url: createSmitheryUrl(
-          "https://server.smithery.ai/exa",
-          {
-            exaApiKey: process.env.EXA_API_KEY
-          }
-        )
+        url: getSmitheryUrl()
       }
     ],
   });
@@ -59,6 +53,13 @@ async function runOrchestrator() {
 
   await researcher.close()
   await writer.close()
+}
+
+function getSmitheryUrl() {
+  const url = new URL("https://server.smithery.ai/exa/mcp")
+  url.searchParams.set("api_key", process.env.SMITHERY_KEY as string)
+  url.searchParams.set("profile", process.env.SMITHERY_PROFILE as string)
+  return url.toString()
 }
 
 runOrchestrator().catch(console.error);
