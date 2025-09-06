@@ -12,16 +12,16 @@ export const COLORS = {
   DIM: "\x1b[2m",
 }
 
-export enum LogLevel {
-  DEBUG = 'debug',
-  INFO = 'info',
-  WARN = 'warn',
-  ERROR = 'error'
-}
+export const LogLevel = {
+  debug: 'debug',
+  info: 'info',
+  warn: 'warn',
+  error: 'error'
+} as const
 
 export interface LogEntry {
   timestamp: number;
-  level: LogLevel;
+  level: keyof typeof LogLevel;
   message: string;
   context?: Record<string, unknown>;
 }
@@ -51,7 +51,7 @@ export class Logger {
     return Logger.instance;
   }
 
-  public getLogs(level?: LogLevel): LogEntry[] {
+  public getLogs(level?: keyof typeof LogLevel): LogEntry[] {
     return level
       ? this.logs.filter(log => log.level === level)
       : this.logs;
@@ -73,22 +73,23 @@ export class Logger {
   }
 
   public info(message: string, context?: any): void {
-    this.log(LogLevel.INFO, message, context);
+    console.log(message)
+    this.log(LogLevel.info, message, context);
   }
 
   public warn(message: string, context?: any): void {
-    this.log(LogLevel.WARN, message, context);
+    this.log(LogLevel.warn, message, context);
   }
 
   public error(message: string, context?: any): void {
-    this.log(LogLevel.ERROR, message, context);
+    this.log(LogLevel.error, message, context);
   }
 
   public debug(message: string, context?: any): void {
-    this.log(LogLevel.DEBUG, message, context);
+    this.log(LogLevel.debug, message, context);
   }
 
-  private log(level: LogLevel, message: string, context?: any): void {
+  private log(level: keyof typeof LogLevel, message: string, context?: any): void {
     if (level in LogLevel) {
       const entry: LogEntry = {
         timestamp: Date.now(),
@@ -108,22 +109,21 @@ export class Logger {
 
     let levelColor = COLORS.RESET;
     let levelTag = entry.level.toUpperCase();
-    let consoleMethod: (...data: any[]) => void = console.log;
 
     switch (entry.level) {
-      case LogLevel.DEBUG:
+      case LogLevel.debug:
         levelColor = COLORS.BLUE;
         levelTag = 'DEBUG';
         break;
-      case LogLevel.INFO:
+      case LogLevel.info:
         levelColor = COLORS.CYAN;
         levelTag = 'INFO';
         break;
-      case LogLevel.WARN:
+      case LogLevel.warn:
         levelColor = COLORS.YELLOW;
         levelTag = 'WARN';
         break;
-      case LogLevel.ERROR:
+      case LogLevel.error:
         levelColor = COLORS.RED;
         levelTag = 'ERROR';
         break;
@@ -131,7 +131,6 @@ export class Logger {
 
     const coloredLevelTag = `${levelColor}[${levelTag}]${COLORS.RESET}`;
     const coloredTimestamp = `${COLORS.DIM}[${formattedTimestamp}]${COLORS.RESET}`;
-
     this.logger[entry.level](`${coloredTimestamp} ${coloredLevelTag} ${entry.message}${contextString}`);
   }
 }
