@@ -1,5 +1,4 @@
 import express, { Request, Response } from 'express';
-import { createSmitheryUrl } from "@smithery/sdk/config"
 import { Orchestrator, Agent, LLMFireworks, ServerConfig } from '../../../src/';
 
 
@@ -20,13 +19,8 @@ function createRouter() {
 
     const exaServerConfig: ServerConfig = {
       name: "search_web",
-      type: "ws",
-      url: createSmitheryUrl(
-        "https://server.smithery.ai/exa/ws",
-        {
-          exaApiKey: process.env.EXA_API_KEY
-        }
-      )
+      type: "http",
+      url: getSmitheryUrl()
     }
 
     const researcher = await Agent.initialize({
@@ -54,6 +48,13 @@ function createRouter() {
   });
 
   return router;
+}
+
+function getSmitheryUrl() {
+  const url = new URL("https://server.smithery.ai/exa/mcp")
+  url.searchParams.set("api_key", process.env.SMITHERY_KEY as string)
+  url.searchParams.set("profile", process.env.SMITHERY_PROFILE as string)
+  return url.toString()
 }
 
 export default createRouter;
