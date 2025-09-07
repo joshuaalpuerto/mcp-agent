@@ -68,7 +68,7 @@ class MCPConnectionManager {
 
   private async connectClient(id: string, transport: Transport, connectAttempts: number = 0): Promise<Client | void> {
     try {
-      this.logger.info(`Connecting to server: ${id}`);
+      this.logger.debug(`Connecting to server: ${id}`);
       // Create a new client
       const client = new Client(
         { name: `multi-server-client-${id}`, version: '1.0.0' },
@@ -76,7 +76,7 @@ class MCPConnectionManager {
       );
       // Connect and initialize
       await client.connect(transport);
-      this.logger.info(`Connected to server: ${id}`);
+      this.logger.debug(`Connected to server: ${id}`);
       return client;
     } catch (error) {
       if (connectAttempts >= this.maxReconnectAttempts) {
@@ -85,7 +85,7 @@ class MCPConnectionManager {
       }
 
       const delay = this.reconnectDelay * Math.pow(2, connectAttempts - 1); // Exponential backoff
-      this.logger.info(`Attempting to reconnect to server ${id} (attempt ${connectAttempts + 1}) in ${delay}ms`);
+      this.logger.debug(`Attempting to reconnect to server ${id} (attempt ${connectAttempts + 1}) in ${delay}ms`);
       await new Promise(resolve => setTimeout(resolve, delay));
       return this.connectClient(id, transport, connectAttempts + 1);
     }
@@ -102,14 +102,14 @@ class MCPConnectionManager {
   async disconnectServer(id: string): Promise<void> {
     const client = this.runningServers.get(id);
     if (!client) {
-      this.logger.info(`Server ${id} not found or already disconnected`);
+      this.logger.debug(`Server ${id} not found or already disconnected`);
       return;
     }
 
     try {
       await client.close();
       this.runningServers.delete(id);
-      this.logger.info(`Disconnected from server: ${id}`);
+      this.logger.debug(`Disconnected from server: ${id}`);
     } catch (error) {
       this.logger.error(`Error disconnecting from server ${id}: ${error}`);
     }
@@ -119,7 +119,7 @@ class MCPConnectionManager {
     const disconnections = Array.from(this.runningServers.entries()).map(async ([id, client]) => {
       try {
         await client.close();
-        this.logger.info(`Disconnected from server: ${id}`);
+        this.logger.debug(`Disconnected from server: ${id}`);
       } catch (error) {
         this.logger.error(`Error disconnecting from server ${id}: ${error}`);
       }

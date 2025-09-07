@@ -72,7 +72,7 @@ export class Agent {
       throw new Error(`Agent: ${this.name} LLM is not initialized`);
     }
 
-    this.logger.info(`[Agent: ${this.name}] woking on user task: ${prompt}`);
+    this.logger.info(`[Agent: ${this.name}] working on user task: ${prompt}`);
 
     this.history.append({
       role: 'user',
