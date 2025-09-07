@@ -2,7 +2,7 @@
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { Agent, LLMFireworks, Orchestrator } from '../../src';
+import { Agent, LLMFireworks, Orchestrator, Logger, LogLevel } from '../../src';
 import { writeLocalSystem } from '../tools/writeLocalSystem';
 
 dotenv.config();
@@ -11,6 +11,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function runOrchestrator() {
+  const logger = Logger.getInstance(console, { level: LogLevel.ERROR });
   const llm = new LLMFireworks("accounts/fireworks/models/deepseek-v3", {
     maxTokens: 2048,
     temperature: 0.1,
@@ -45,6 +46,7 @@ async function runOrchestrator() {
 
   const orchestrator = new Orchestrator({
     llm,
+    logger,
     agents: [researcher, writer],
   })
 
