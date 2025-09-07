@@ -45,6 +45,7 @@ class Orchestrator {
 
     this.agents = {};
     for (const agent of config.agents) {
+      agent.setLogger(this.logger)
       this.agents[agent.name] = agent;
     }
   }

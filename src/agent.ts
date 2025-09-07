@@ -192,4 +192,10 @@ export class Agent {
       await this.aggregator.close();
     }
   }
+
+  // update the logger instance if needed
+  // used in workflows 
+  public setLogger(logger: Logger) {
+    this.logger = logger;
+  }
 }
