@@ -88,23 +88,25 @@ export class LLMFireworks implements LLMInterface {
     let usage: OpenAI.CompletionUsage | undefined;
     let finishReason: string | undefined;
 
+    // reference here https://docs.fireworks.ai/guides/function-calling#streaming-with-tool-calls
     return new Promise(async (resolve) => {
       for await (const chunk of stream) {
-        contentChunk += (chunk.choices[0]?.delta?.content || '');
-        if (chunk.choices[0]?.delta?.tool_calls?.length) {
+        // since we are not generating multiple response so we know the response we expect is in index 0
+        const chunkResponse = chunk.choices[0];
+        contentChunk += (chunkResponse?.delta?.content || '');
+        if (chunkResponse?.delta?.tool_calls?.length) {
           // LLM could return multiple tool_calls so we need to register them in their index.
-          const chunkToolCall = chunk.choices[0].delta.tool_calls[0] as OpenAI.ChatCompletionMessageToolCall & { index: number };
+          const chunkToolCall = chunkResponse.delta.tool_calls[0] as OpenAI.ChatCompletionMessageToolCall & { index: number };
           if (!toolCall?.[chunkToolCall.index]) {
             // When the first tool call is received, we need to initialize the tool call object which have initial id, type and function.name
-            toolCall[chunkToolCall.index] = chunk.choices[0].delta.tool_calls[0] as OpenAI.ChatCompletionMessageToolCall;
+            toolCall[chunkToolCall.index] = chunkToolCall
           }
           // function argumetn might come in multiple chunks, so we need to concatenate them
-          toolCall[chunkToolCall.index].function.arguments += chunk.choices[0].delta.tool_calls[0].function?.arguments || ''
+          toolCall[chunkToolCall.index].function.arguments += chunkResponse.delta.tool_calls[0].function?.arguments || ''
         }
         usage = chunk.usage || undefined
-        finishReason = chunk.choices[0]?.finish_reason || undefined
+        finishReason = chunkResponse?.finish_reason || undefined
       }
-
       resolve({ content: contentChunk, toolCalls: toolCall ? Object.values(toolCall) : [], usage, finishReason })
     })
   }
