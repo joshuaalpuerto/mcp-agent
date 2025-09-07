@@ -13,15 +13,19 @@ export const COLORS = {
 }
 
 export const LogLevel = {
-  debug: 'debug',
-  info: 'info',
-  warn: 'warn',
-  error: 'error'
+  INFO: 'info',
+  WARN: 'warn',
+  DEBUG: 'debug',
+  ERROR: 'error'
 } as const
+
+const LOG_LEVELS_ORDER = [LogLevel.ERROR, LogLevel.WARN, LogLevel.INFO, LogLevel.DEBUG] as const;
+
+type LogLevelType = typeof LogLevel[keyof typeof LogLevel];
 
 export interface LogEntry {
   timestamp: number;
-  level: keyof typeof LogLevel;
+  level: LogLevelType;
   message: string;
   context?: Record<string, unknown>;
 }
@@ -34,24 +38,31 @@ export interface LoggerInterface {
   log?(level: string, message: string, context?: any): void;
 }
 
+export interface LogOptions {
+  level?: LogLevelType;
+}
+
 export class Logger {
   private static instance: Logger;
   private logs: LogEntry[] = [];
   private logger: LoggerInterface;
+  private logLevel: LogLevelType;
+
 
   // default to console logger
-  private constructor(logger: LoggerInterface) {
+  private constructor(logger: LoggerInterface, options: LogOptions = {}) {
     this.logger = logger;
+    this.logLevel = options.level || LogLevel.INFO;;
   }
 
-  public static getInstance(logger: LoggerInterface = console): Logger {
+  public static getInstance(logger: LoggerInterface = console, options: LogOptions = {}): Logger {
     if (!Logger.instance) {
-      Logger.instance = new Logger(logger);
+      Logger.instance = new Logger(logger, options);
     }
     return Logger.instance;
   }
 
-  public getLogs(level?: keyof typeof LogLevel): LogEntry[] {
+  public getLogs(level?: LogLevelType): LogEntry[] {
     return level
       ? this.logs.filter(log => log.level === level)
       : this.logs;
@@ -73,35 +84,40 @@ export class Logger {
   }
 
   public info(message: string, context?: any): void {
-    console.log(message)
-    this.log(LogLevel.info, message, context);
+    this.log(LogLevel.INFO, message, context);
   }
 
   public warn(message: string, context?: any): void {
-    this.log(LogLevel.warn, message, context);
+    this.log(LogLevel.WARN, message, context);
   }
 
   public error(message: string, context?: any): void {
-    this.log(LogLevel.error, message, context);
+    this.log(LogLevel.ERROR, message, context);
   }
 
   public debug(message: string, context?: any): void {
-    this.log(LogLevel.debug, message, context);
+    this.log(LogLevel.DEBUG, message, context);
   }
 
-  private log(level: keyof typeof LogLevel, message: string, context?: any): void {
-    if (level in LogLevel) {
-      const entry: LogEntry = {
-        timestamp: Date.now(),
-        level,
-        message,
-        context
-      };
-      this.outputLog(entry);
-    }
+  private log(level: LogLevelType, message: string, context?: any): void {
+    const entry: LogEntry = {
+      timestamp: Date.now(),
+      level,
+      message,
+      context
+    };
+    this.logs.push(entry);
+    this.outputLog(entry);
   }
 
   private outputLog(entry: LogEntry): void {
+    if (LOG_LEVELS_ORDER.indexOf(entry.level) <= LOG_LEVELS_ORDER.indexOf(this.logLevel)) {
+      const output = this.formatMessage(entry);
+      this.logger[entry.level](output);
+    }
+  }
+
+  private formatMessage(entry: LogEntry): string {
     const formattedTimestamp = new Date(entry.timestamp).toISOString();
     const contextString = entry.context
       ? `${COLORS.DIM} | Context: ${util.inspect(entry.context, { depth: null, colors: true })}${COLORS.RESET}`
@@ -111,19 +127,19 @@ export class Logger {
     let levelTag = entry.level.toUpperCase();
 
     switch (entry.level) {
-      case LogLevel.debug:
+      case LogLevel.DEBUG:
         levelColor = COLORS.BLUE;
         levelTag = 'DEBUG';
         break;
-      case LogLevel.info:
+      case LogLevel.INFO:
         levelColor = COLORS.CYAN;
         levelTag = 'INFO';
         break;
-      case LogLevel.warn:
+      case LogLevel.WARN:
         levelColor = COLORS.YELLOW;
         levelTag = 'WARN';
         break;
-      case LogLevel.error:
+      case LogLevel.ERROR:
         levelColor = COLORS.RED;
         levelTag = 'ERROR';
         break;
@@ -131,6 +147,6 @@ export class Logger {
 
     const coloredLevelTag = `${levelColor}[${levelTag}]${COLORS.RESET}`;
     const coloredTimestamp = `${COLORS.DIM}[${formattedTimestamp}]${COLORS.RESET}`;
-    this.logger[entry.level](`${coloredTimestamp} ${coloredLevelTag} ${entry.message}${contextString}`);
+    return `${coloredTimestamp} ${coloredLevelTag} ${entry.message}${contextString}`
   }
 }
