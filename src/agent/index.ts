@@ -1,10 +1,13 @@
 import OpenAI from 'openai';
-import MCPServerAggregator from './mcp/mcpServerAggregator';
-import { SimpleMemory, Memory } from './memory';
-import { LLMConfig, LLMInterface } from './llm/types';
-import { FunctionToolInterface } from './tools/types';
-import { ServerConfig } from './mcp/types';
-import { Logger } from './logger';
+import MCPServerAggregator from '../mcp/mcpServerAggregator';
+import { SimpleMemory, Memory } from '../memory';
+import { LLMConfig, LLMInterface } from '../llm/types';
+import { FunctionToolInterface } from '../tools/types';
+import { ServerConfig } from '../mcp/types';
+import { Logger } from '../logger';
+import { EventEmitter } from '../eventEmitter';
+import { AGENT_EVENTS, AgentLifecycleEvent } from './events';
+
 interface AgentConfig {
   name: string;
   description: string;
@@ -15,6 +18,7 @@ interface AgentConfig {
   maxIterations?: number;
   logger?: Logger;
 }
+
 
 export class Agent {
   public name: string;
@@ -27,6 +31,7 @@ export class Agent {
   private maxIterations: number;
   private systemPrompt: string;
   private logger: Logger;
+  private eventEmitter = new EventEmitter<AgentLifecycleEvent>();
 
   constructor(config: AgentConfig & {
     // optional aggregator
@@ -77,7 +82,11 @@ export class Agent {
     this.history.append({
       role: 'user',
       content: prompt,
-    })
+    });
+    this.emitEvent({
+      action: AGENT_EVENTS.AGENT_START_TASK,
+      metadata: { task: prompt, },
+    });
 
     let messages: OpenAI.ChatCompletionMessageParam[] = [
       { role: 'system', content: this.systemPrompt },
@@ -104,13 +113,27 @@ export class Agent {
       if ((result.finishReason === 'tool_calls' || result.finishReason === 'function_call') && result.toolCalls?.length) {
         for (const toolCall of result.toolCalls) {
           this.logger.info(`[Agent: ${this.name}] executing tool: ${toolCall.function.name}`);
+          this.emitEvent({
+            action: AGENT_EVENTS.AGENT_TOOL_CALL,
+            metadata: { toolName: toolCall.function.name, args: toolCall.function.arguments },
+          });
+
           const toolResult = await this.callTool(toolCall.function.name, typeof toolCall.function.arguments === 'string'
             ? JSON.parse(toolCall.function.arguments)
             : toolCall.function.arguments || {});
 
           if (!toolResult.content.length) {
+            this.emitEvent({
+              action: AGENT_EVENTS.AGENT_ERROR,
+              metadata: { error: new Error(`Tool: ${toolCall.function.name} call failed`), context: { toolName: toolCall.function.name } },
+            });
             throw new Error(`Tool: ${toolCall.function.name} call failed`);
           }
+
+          this.emitEvent({
+            action: AGENT_EVENTS.AGENT_TOOL_RESULT,
+            metadata: { toolName: toolCall.function.name, result: toolResult },
+          });
 
           const toolResultContent = JSON.stringify(toolResult) as string
           this.logger.info(`[Agent: ${this.name}] tool: ${toolCall.function.name} call result: ${toolResultContent}`);
@@ -118,7 +141,7 @@ export class Agent {
             role: 'tool',
             content: toolResultContent,
             tool_call_id: toolCall.id,
-          })
+          });
         }
       } else {
         this.logger.info(`[Agent: ${this.name}] final response: ${result.content}`);
@@ -126,7 +149,11 @@ export class Agent {
         this.history.append({
           role: 'assistant',
           content: result.content,
-        })
+        });
+        this.emitEvent({
+          action: AGENT_EVENTS.AGENT_END_TASK,
+          metadata: { task: prompt, response: result.content },
+        });
         break;
       }
 
@@ -190,6 +217,7 @@ export class Agent {
   public async close() {
     if (this.aggregator) {
       await this.aggregator.close();
+
     }
   }
 
@@ -197,5 +225,17 @@ export class Agent {
   // used in workflows 
   public setLogger(logger: Logger) {
     this.logger = logger;
+  }
+
+  private emitEvent(event: Omit<AgentLifecycleEvent, 'agentName' | 'timestamp'>) {
+    this.eventEmitter.emit(`agent:lifecycle`, {
+      ...event,
+      agentName: this.name,
+      timestamp: Date.now()?.toString()
+    } as AgentLifecycleEvent);
+  }
+
+  public onAgentEvent(listener: (event: AgentLifecycleEvent) => void) {
+    this.eventEmitter.on(`agent:lifecycle`, listener);
   }
 }
