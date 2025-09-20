@@ -1,17 +1,21 @@
 import OpenAI from 'openai';
 import { Agent } from '../../agent';
+import { AgentLifecycleEvent } from '../../agent/events';
 import { LLMInterface } from '../../llm/types';
-import { fullPlanSchemaReponseFormat, generateFullPlanPrompt, generatePlanObjectivePrompt, generateTaskPrompt } from './prompt';
+import { Logger } from '../../logger';
+import { EventEmitter } from '../../eventEmitter';
+import { WorkflowLifecycleEvent } from '../events';
+import { fullPlanSchemaResponseFormat, generateFullPlanPrompt, generatePlanObjectivePrompt, generateTaskPrompt } from './prompt';
 import { PlanResult, PlanStepResult, PlanTaskResult, PlanStatus } from './types';
-import { Logger, LogLevel } from '../../logger';
 
 class Orchestrator {
-  llm: LLMInterface;
-  planner: Agent;
-  synthesizer: Agent;
-  agents: Record<string, Agent>;
-  maxIterations: number;
-  logger: Logger;
+  private llm: LLMInterface;
+  private planner: Agent;
+  private synthesizer: Agent;
+  private agents: Record<string, Agent>;
+  private maxIterations: number;
+  private logger: Logger;
+  private eventEmitter = new EventEmitter<WorkflowLifecycleEvent>();
 
   constructor(config: {
     llm: LLMInterface,
@@ -32,7 +36,7 @@ class Orchestrator {
                 You are an expert planner. Given an objective task and a list of Agents (which are collections of servers), your job is to break down the objective into a series of steps,
                 which can be performed by LLMs with access to the servers or agents.
                 `,
-      llm: config.llm,
+      llm: this.llm,
     });
 
     this.synthesizer = config.synthesizer || new Agent({
@@ -40,14 +44,29 @@ class Orchestrator {
       description: `
                 You are an expert synthesizer. Given a list of steps and their results, your job is to synthesize the results into a cohesive result.
                 `,
-      llm: config.llm,
+      llm: this.llm,
     });
 
     this.agents = {};
     for (const agent of config.agents) {
       agent.setLogger(this.logger)
+      agent.onAgentEvent((event: AgentLifecycleEvent) => {
+        this.emitEvent(event);
+      })
       this.agents[agent.name] = agent;
     }
+  }
+
+  private emitEvent(event: AgentLifecycleEvent) {
+    this.eventEmitter.emit(`orchestrator:lifecycle`, {
+      action: event,
+      workflowName: 'orchestrator',
+      timestamp: Date.now()?.toString()
+    } as WorkflowLifecycleEvent);
+  }
+
+  public onWorkflowEvent(listener: (event: WorkflowLifecycleEvent) => void) {
+    this.eventEmitter.on(`orchestrator:lifecycle`, listener);
   }
 
   async generate(
@@ -64,7 +83,7 @@ class Orchestrator {
     this.logger.info(`Generating full plan for objective: ${objective}`);
     const prompt = await this.prepareFullPlanPrompt(objective);
     const plan: PlanResult = await this.planner.generateStructuredResult(prompt, {
-      responseFormat: fullPlanSchemaReponseFormat as OpenAI.ResponseFormatJSONSchema
+      responseFormat: fullPlanSchemaResponseFormat as OpenAI.ResponseFormatJSONSchema
     });
 
     for (const step of plan.steps) {
