@@ -11,7 +11,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function runOrchestrator() {
-  const logger = Logger.getInstance(console, { level: LogLevel.INFO });
+  const logger = Logger.getInstance(console, { level: LogLevel.ERROR });
   const llm = new LLMFireworks("accounts/fireworks/models/deepseek-v3", {
     maxTokens: 2048,
     temperature: 0.1,
@@ -48,6 +48,10 @@ async function runOrchestrator() {
     llm,
     logger,
     agents: [researcher, writer],
+  })
+
+  orchestrator.onWorkflowEvent((event) => {
+    console.log(`[Orchestrator Event] action=${JSON.stringify(event.action)} workflow = ${event.workflowName} timestamp = ${event.timestamp}`)
   })
 
   const result = await orchestrator.generate('Search new latest development about AI and write about it to `theory_on_ai.md` on my local machine. no need to verify the result. Also no need to use deep_researcher_start.');
