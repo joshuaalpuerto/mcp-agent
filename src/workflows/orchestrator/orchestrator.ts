@@ -57,6 +57,8 @@ class Orchestrator {
     }
   }
 
+  // TODO: this might be on the parent class (but I don't want inheritance )
+  // we will find a better way later.
   private emitEvent(event: AgentLifecycleEvent) {
     this.eventEmitter.emit(`orchestrator:lifecycle`, {
       action: event,
@@ -65,6 +67,8 @@ class Orchestrator {
     } as WorkflowLifecycleEvent);
   }
 
+  // TODO: this might be on the parent class (but I don't want inheritance )
+  // we will find a better way later.
   public onWorkflowEvent(listener: (event: WorkflowLifecycleEvent) => void) {
     this.eventEmitter.on(`orchestrator:lifecycle`, listener);
   }
