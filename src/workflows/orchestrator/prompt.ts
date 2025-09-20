@@ -48,7 +48,7 @@ Return your response in the following JSON structure:
 You must respond with valid JSON only, with no triple backticks. No markdown formatting.
 No extra text. Do not wrap in \`\`\`json code fences.`;
 
-export const fullPlanSchemaReponseFormat = {
+export const fullPlanSchemaResponseFormat = {
   type: 'json_schema',
   json_schema: {
     name: 'plan',
