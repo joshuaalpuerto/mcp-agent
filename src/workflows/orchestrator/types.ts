@@ -29,7 +29,6 @@ export type PlanTaskResult = PlanTask & {
 
 export type PlanStepResult = PlanStep & {
   tasks: PlanTaskResult[];
-  result: string;
 }
 
 export type PlanResult = Plan & {

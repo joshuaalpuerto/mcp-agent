@@ -1,12 +1,13 @@
 import OpenAI from 'openai';
 import { Agent } from '../../agent';
-import { AgentLifecycleEvent } from '../../agent/events';
 import { LLMInterface } from '../../llm/types';
 import { Logger } from '../../logger';
 import { EventEmitter } from '../../eventEmitter';
 import { WorkflowLifecycleEvent } from '../events';
+import { SimpleMemory, Memory } from '../../memory';
 import { fullPlanSchemaResponseFormat, generateFullPlanPrompt, generatePlanObjectivePrompt, generateTaskPrompt } from './prompt';
 import { PlanResult, PlanStepResult, PlanTaskResult, PlanStatus } from './types';
+
 
 class Orchestrator {
   private llm: LLMInterface;
@@ -24,6 +25,7 @@ class Orchestrator {
     synthesizer?: Agent,
     maxIterations?: number,
     logger?: Logger,
+    history?: Memory;
   }) {
     this.llm = config.llm;
     this.maxIterations = config.maxIterations || 2;
@@ -37,6 +39,7 @@ class Orchestrator {
                 which can be performed by LLMs with access to the servers or agents.
                 `,
       llm: this.llm,
+      history: config.history || new SimpleMemory()
     });
 
     this.synthesizer = config.synthesizer || new Agent({
@@ -50,32 +53,13 @@ class Orchestrator {
     this.agents = {};
     for (const agent of config.agents) {
       agent.setLogger(this.logger)
-      agent.onAgentEvent((event: AgentLifecycleEvent) => {
-        this.emitEvent(event);
-      })
       this.agents[agent.name] = agent;
     }
   }
 
-  // TODO: this might be on the parent class (but I don't want inheritance )
-  // we will find a better way later.
-  private emitEvent(event: AgentLifecycleEvent) {
-    this.eventEmitter.emit(`orchestrator:lifecycle`, {
-      action: event,
-      workflowName: 'orchestrator',
-      timestamp: Date.now()?.toString()
-    } as WorkflowLifecycleEvent);
-  }
-
-  // TODO: this might be on the parent class (but I don't want inheritance )
-  // we will find a better way later.
-  public onWorkflowEvent(listener: (event: WorkflowLifecycleEvent) => void) {
-    this.eventEmitter.on(`orchestrator:lifecycle`, listener);
-  }
-
   async generate(
     message: string,
-  ): Promise<string> {
+  ): Promise<PlanResult> {
     const objective = String(message);
     const planResult: PlanResult = {
       steps: [],
@@ -96,7 +80,16 @@ class Orchestrator {
     }
 
     const planResultInfo = await this._formatPlanResultInfo(planResult);
-    return this.synthesizer.generateStr(planResultInfo);
+    const finalResult = await this.synthesizer.generateStr(planResultInfo);
+    planResult.result = finalResult;
+    planResult.status = PlanStatus.Complete;
+
+    return planResult;
+  }
+
+  async generateStr(message: string): Promise<string> {
+    const result = await this.generate(message);
+    return result.result;
   }
 
   async executeStep(
@@ -108,7 +101,6 @@ class Orchestrator {
     const stepResult: PlanStepResult = {
       objective: step.objective,
       tasks: [],
-      result: '',
     };
 
     for (const task of step.tasks) {
