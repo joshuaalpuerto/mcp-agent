@@ -12,7 +12,7 @@ interface AgentConfig {
   name: string;
   description: string;
   serverConfigs?: ServerConfig[];
-  history?: Memory<OpenAI.ChatCompletionMessageParam>;
+  history?: Memory;
   functions?: FunctionToolInterface[];
   llm: LLMInterface;
   maxIterations?: number;
@@ -25,7 +25,7 @@ export class Agent {
   public description: string;
   public serverConfigs?: ServerConfig[];
   public functions?: Record<string, FunctionToolInterface>;
-  private history: Memory<OpenAI.ChatCompletionMessageParam>;
+  private history: Memory;
   private llm: LLMInterface | null;
   private aggregator?: MCPServerAggregator;
   private maxIterations: number;
@@ -56,7 +56,7 @@ export class Agent {
       this.aggregator = config.aggregator;
     }
 
-    this.history = config.history || new SimpleMemory<OpenAI.ChatCompletionMessageParam>();
+    this.history = config.history || new SimpleMemory();
     this.systemPrompt = `You are a ${this.name}. ${this.description} \n\n You have ability to use tools to help you complete the task.`
   }
 
