@@ -1,34 +1,41 @@
-export interface Memory<MessageParamT> {
-  extend(messages: MessageParamT[]): void;
-  set(messages: MessageParamT[]): void;
-  append(message: MessageParamT): void;
-  get(): MessageParamT[];
+import OpenAI from 'openai';
+export interface Memory {
+  extend(messages: OpenAI.ChatCompletionMessageParam[]): void;
+  set(messages: OpenAI.ChatCompletionMessageParam[]): void;
+  append(message: OpenAI.ChatCompletionMessageParam): void;
+  get(): OpenAI.ChatCompletionMessageParam[];
   clear(): void;
 }
 
-export class SimpleMemory<MessageParamT> implements Memory<MessageParamT> {
+export class SimpleMemory implements Memory {
   /**
    * Simple memory management for storing past interactions in-memory.
    */
-  private history: MessageParamT[] = [];
+  private history: OpenAI.ChatCompletionMessageParam[] = [];
 
   constructor() {
     this.history = [];
   }
 
-  extend(messages: MessageParamT[]): void {
+  static fromMessages(messages: OpenAI.ChatCompletionMessageParam[]): SimpleMemory {
+    const memory = new SimpleMemory();
+    memory.set(messages);
+    return memory;
+  }
+
+  extend(messages: OpenAI.ChatCompletionMessageParam[]): void {
     this.history.push(...messages);
   }
 
-  set(messages: MessageParamT[]): void {
+  set(messages: OpenAI.ChatCompletionMessageParam[]): void {
     this.history = [...messages]; // Use spread syntax for copy
   }
 
-  append(message: MessageParamT): void {
+  append(message: OpenAI.ChatCompletionMessageParam): void {
     this.history.push(message);
   }
 
-  get(): MessageParamT[] {
+  get(): OpenAI.ChatCompletionMessageParam[] {
     return this.history;
   }
 
