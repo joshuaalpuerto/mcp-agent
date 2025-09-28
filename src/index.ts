@@ -8,5 +8,5 @@ export { type LLMConfig, type LLMInterface, type LLMResult, type AIResponseForma
 export { type CallToolResult, type FunctionToolInterface } from './tools/types'
 export { type ServerConfig } from './mcp/types'
 export { type LoggerInterface, Logger, LogLevel } from './logger'
-export { type WorkflowLifecycleEvent } from './workflows/events'
+export { type WorkflowLifecycleEvent, WORKFLOW_EVENTS } from './workflows/events'
 export { type AgentLifecycleEvent, AGENT_EVENTS } from './agent/events'
