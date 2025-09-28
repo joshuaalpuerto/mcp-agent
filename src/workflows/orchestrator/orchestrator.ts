@@ -2,8 +2,6 @@ import OpenAI from 'openai';
 import { Agent } from '../../agent';
 import { LLMInterface } from '../../llm/types';
 import { Logger } from '../../logger';
-import { EventEmitter } from '../../eventEmitter';
-import { WorkflowLifecycleEvent } from '../events';
 import { SimpleMemory, Memory } from '../../memory';
 import { fullPlanSchemaResponseFormat, generateFullPlanPrompt, generatePlanObjectivePrompt, generateTaskPrompt } from './prompt';
 import { PlanResult, PlanStepResult, PlanTaskResult, PlanStatus } from './types';
@@ -14,9 +12,7 @@ class Orchestrator {
   private planner: Agent;
   private synthesizer: Agent;
   private agents: Record<string, Agent>;
-  private maxIterations: number;
   private logger: Logger;
-  private eventEmitter = new EventEmitter<WorkflowLifecycleEvent>();
 
   constructor(config: {
     llm: LLMInterface,
@@ -28,7 +24,6 @@ class Orchestrator {
     history?: Memory;
   }) {
     this.llm = config.llm;
-    this.maxIterations = config.maxIterations || 2;
     this.logger = config.logger || Logger.getInstance();
 
     // load agent as it is as we don't need mcp here.
