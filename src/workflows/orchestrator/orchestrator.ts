@@ -5,7 +5,8 @@ import { Logger } from '../../logger';
 import { SimpleMemory, Memory } from '../../memory';
 import { fullPlanSchemaResponseFormat, generateFullPlanPrompt, generatePlanObjectivePrompt, generateTaskPrompt } from './prompt';
 import { PlanResult, PlanStepResult, PlanTaskResult, PlanStatus } from './types';
-
+import { EventEmitter } from '../../eventEmitter';
+import { WORKFLOW_EVENTS, WorkflowLifecycleEvent } from '../events';
 
 class Orchestrator {
   private llm: LLMInterface;
@@ -13,6 +14,8 @@ class Orchestrator {
   private synthesizer: Agent;
   private agents: Record<string, Agent>;
   private logger: Logger;
+  private eventEmitter = new EventEmitter<WorkflowLifecycleEvent>();
+  private workflowId: string | undefined;
 
   constructor(config: {
     llm: LLMInterface,
@@ -52,9 +55,28 @@ class Orchestrator {
     }
   }
 
+  private emitEvent(event: Partial<WorkflowLifecycleEvent>) {
+    if (!this.workflowId) return;
+    this.eventEmitter.emit(
+      'workflow:lifecycle',
+      {
+        ...event,
+        workflowId: this.workflowId,
+        timestamp: new Date().toISOString(),
+      } as WorkflowLifecycleEvent
+    );
+  }
+
+  public onWorkflowEvent(listener: (event: WorkflowLifecycleEvent) => void) {
+    this.eventEmitter.on('workflow:lifecycle', listener);
+  }
+
   async generate(
     message: string,
   ): Promise<PlanResult> {
+
+    this.workflowId = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+
     const objective = String(message);
     const planResult: PlanResult = {
       steps: [],
@@ -63,21 +85,57 @@ class Orchestrator {
       status: PlanStatus.InProgress,
     };
 
+    // Emit workflow start event
+    this.emitEvent({
+      type: WORKFLOW_EVENTS.WORKFLOW_START,
+      input: objective
+    });
+
     this.logger.info(`Generating full plan for objective: ${objective}`);
     const prompt = await this.prepareFullPlanPrompt(objective);
     const plan: PlanResult = await this.planner.generateStructuredResult(prompt, {
       responseFormat: fullPlanSchemaResponseFormat as OpenAI.ResponseFormatJSONSchema
     });
 
-    for (const step of plan.steps) {
-      const stepResult = await this.executeStep(step, planResult);
-      planResult.steps.push(stepResult);
+    for (let stepIndex = 0; stepIndex < plan.steps.length; stepIndex++) {
+      const step = plan.steps[stepIndex];
+
+      // Emit step start event
+      this.emitEvent({
+        type: WORKFLOW_EVENTS.WORKFLOW_STEP_START,
+        step: step
+      });
+
+      try {
+        const stepResult = await this.executeStep(step, planResult);
+        planResult.steps.push(stepResult);
+
+        // Emit step end event
+        this.emitEvent({
+          type: WORKFLOW_EVENTS.WORKFLOW_STEP_END,
+          step: stepResult,
+        });
+      } catch (error) {
+        // Emit error event
+        this.emitEvent({
+          type: WORKFLOW_EVENTS.WORKFLOW_ERROR,
+          error,
+          context: { step, stepIndex },
+        });
+        throw error;
+      }
     }
 
     const planResultInfo = await this._formatPlanResultInfo(planResult);
     const finalResult = await this.synthesizer.generateStr(planResultInfo);
     planResult.result = finalResult;
     planResult.status = PlanStatus.Complete;
+
+    // Emit workflow end event
+    this.emitEvent({
+      type: WORKFLOW_EVENTS.WORKFLOW_END,
+      result: planResult,
+    });
 
     return planResult;
   }
@@ -89,16 +147,19 @@ class Orchestrator {
 
   async executeStep(
     step: PlanStepResult,
-    previousResult: PlanResult
+    previousResult: PlanResult,
   ): Promise<PlanStepResult> {
-
     const previousResultInfo = await this._formatPlanResultInfo(previousResult);
-    const stepResult: PlanStepResult = {
-      objective: step.objective,
-      tasks: [],
-    };
 
-    for (const task of step.tasks) {
+    for (let taskIndex = 0; taskIndex < step.tasks.length; taskIndex++) {
+      const task = step.tasks[taskIndex];
+
+      // Emit task start event
+      this.emitEvent({
+        type: WORKFLOW_EVENTS.WORKFLOW_TASK_START,
+        task,
+      });
+
       const agent = this.agents[task.agent]
       if (!agent) {
         throw new Error(`No agent found matching ${task.agent}`);
@@ -111,15 +172,17 @@ class Orchestrator {
         previousResultInfo: previousResultInfo,
       });
 
-      const result = await agent.generateStr(context);
-      this.logger.info(`[Agent: ${task.agent}]\nTask: ${task.description}\nResult: ${result}`);
-      stepResult.tasks.push({
-        ...task,
-        result: result,
+      task.result = await agent.generateStr(context);
+      this.logger.info(`[Agent: ${task.agent}]\nTask: ${task.description}\nResult: ${task.result}`);
+
+
+      this.emitEvent({
+        type: WORKFLOW_EVENTS.WORKFLOW_TASK_END,
+        task,
       });
     }
 
-    return stepResult;
+    return step;
   }
 
   async prepareFullPlanPrompt(
