@@ -1,4 +1,5 @@
 export { Agent } from './agent'
+export { RunLedgerAgent } from './agent/runLedgerAgent'
 export { Orchestrator } from './workflows/orchestrator/orchestrator'
 export { LLMFireworks } from './llm/llmFireworks'
 export { App } from './app'

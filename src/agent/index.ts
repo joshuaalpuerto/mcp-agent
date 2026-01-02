@@ -8,7 +8,7 @@ import { Logger } from '../logger';
 import { EventEmitter } from '../eventEmitter';
 import { AGENT_EVENTS, AgentLifecycleEvent } from './events';
 
-interface AgentConfig {
+export interface AgentConfig {
   name: string;
   description: string;
   serverConfigs?: ServerConfig[];
@@ -201,7 +201,7 @@ export class Agent {
   }
 
   // we can apply some logic here once we run the tool
-  private async callTool(toolName: string, args: Object): Promise<any> {
+  protected async callTool(toolName: string, args: Object): Promise<any> {
     const isMCPTool = this.aggregator?.findTool(toolName);
     if (isMCPTool && this.aggregator) {
       return this.aggregator.executeTool(toolName, args);

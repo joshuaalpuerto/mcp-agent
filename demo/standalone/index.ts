@@ -2,7 +2,7 @@
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { Agent, LLMFireworks, Orchestrator, Logger, WorkflowLifecycleEvent, LogLevel, SimpleMemory, WORKFLOW_EVENTS } from '../../src';
+import { RunLedgerAgent, LLMFireworks, Orchestrator, Logger, WorkflowLifecycleEvent, LogLevel, SimpleMemory, WORKFLOW_EVENTS } from '../../src';
 import { writeLocalSystem } from '../tools/writeLocalSystem';
 
 dotenv.config();
@@ -12,13 +12,13 @@ const __dirname = path.dirname(__filename);
 
 async function runOrchestrator() {
   const logger = Logger.getInstance(console, { level: LogLevel.ERROR });
-  const llm = new LLMFireworks("accounts/fireworks/models/deepseek-v3", {
+  const llm = new LLMFireworks("accounts/fireworks/models/deepseek-v3p2", {
     maxTokens: 2048,
     temperature: 0.1,
     stream: true
   })
 
-  const researcher = await Agent.initialize({
+  const researcher = await RunLedgerAgent.initialize({
     llm,
     name: "researcher",
     description: `Your expertise is to find information.`,
@@ -37,7 +37,7 @@ async function runOrchestrator() {
     ],
   });
 
-  const writer = await Agent.initialize({
+  const writer = await RunLedgerAgent.initialize({
     name: "writer",
     description: `Your expertise is to write information to a file.`,
     functions: [writeLocalSystem],
