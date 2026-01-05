@@ -18,7 +18,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install runledger
+          python -m pip install "runledger==0.1.0"
           npm install
       - name: Run deterministic evals (replay)
         run: |
