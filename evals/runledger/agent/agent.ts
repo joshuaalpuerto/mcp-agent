@@ -1,6 +1,6 @@
 import readline from 'readline';
-import { Agent, SimpleMemory, type LLMInterface, type LLMResult } from '../../src';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
+import { Agent, Logger, LogLevel, SimpleMemory, type LLMInterface, type LLMResult } from '../../../src';
 
 type TaskStartMessage = {
   type: 'task_start';
@@ -48,9 +48,9 @@ function pickQuery(input: Record<string, unknown>): string {
 
 function lastUserContent(messages: any[]): string {
   for (let i = messages.length - 1; i >= 0; i--) {
-    const m = messages[i];
-    if (m.role === 'user' && typeof m.content === 'string') {
-      return m.content;
+    const message = messages[i];
+    if (message?.role === 'user' && typeof message.content === 'string') {
+      return message.content;
     }
   }
   return '';
@@ -99,47 +99,44 @@ class StubLLM implements LLMInterface {
 async function main(): Promise<number> {
   const rl = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });
 
-  // Track pending tool_result resolutions keyed by call_id.
-  const resolvers: Record<
+  // Resolve pending tool_result messages by call_id.
+  const pendingToolResults = new Map<
     string,
-    { resolve: (m: ToolResultMessage) => void; reject: (e: Error) => void }
-  > = {};
+    { resolve: (m: ToolResultMessage) => void; reject: (e: Error) => void; timeoutId: NodeJS.Timeout }
+  >();
 
-  const waitForToolResult = (callId: string): Promise<ToolResultMessage> =>
+  const waitForToolResult = (callId: string, timeoutMs = 20_000): Promise<ToolResultMessage> =>
     new Promise((resolve, reject) => {
-      resolvers[callId] = { resolve, reject };
+      const timeoutId = setTimeout(() => {
+        pendingToolResults.delete(callId);
+        reject(new Error(`Timeout waiting for tool_result: ${callId}`));
+      }, timeoutMs);
+      pendingToolResults.set(callId, { resolve, reject, timeoutId });
     });
 
   const handleToolResult = (msg: ToolResultMessage) => {
-    const entry = resolvers[msg.call_id];
-    if (entry) {
-      entry.resolve(msg);
-      delete resolvers[msg.call_id];
+    const entry = pendingToolResults.get(msg.call_id);
+    if (!entry) {
+      return;
     }
+    clearTimeout(entry.timeoutId);
+    pendingToolResults.delete(msg.call_id);
+    entry.resolve(msg);
   };
 
-  for await (const raw of rl) {
-    const line = raw.trim();
-    if (!line) {
-      continue;
-    }
-    let message: IncomingMessage;
-    try {
-      message = JSON.parse(line) as IncomingMessage;
-    } catch {
-      continue; // keep stdout JSONL-only
-    }
+  const logger = Logger.getInstance(
+    {
+      info: (message: string) => process.stderr.write(`${message}\n`),
+      warn: (message: string) => process.stderr.write(`${message}\n`),
+      debug: (message: string) => process.stderr.write(`${message}\n`),
+      error: (message: string) => process.stderr.write(`${message}\n`),
+    },
+    { level: LogLevel.ERROR }
+  );
 
-    if (message.type === 'tool_result') {
-      handleToolResult(message as ToolResultMessage);
-      continue;
-    }
+  let started = false;
 
-    if (message.type !== 'task_start') {
-      continue;
-    }
-
-    const task = message as TaskStartMessage;
+  const runTask = async (task: TaskStartMessage): Promise<void> => {
     const query = pickQuery(task.input || {});
 
     // Build a real Agent but monkey-patch callTool to emit RunLedger tool_call / await tool_result.
@@ -150,10 +147,11 @@ async function main(): Promise<number> {
       llm,
       history: new SimpleMemory(),
       maxIterations: 2,
+      logger,
     });
 
     (agent as any).callTool = async (toolName: string, args: Record<string, unknown>) => {
-      const callId = uuidv4();
+      const callId = randomUUID();
       send({ type: 'tool_call', name: toolName, call_id: callId, args });
       const toolResult = await waitForToolResult(callId);
       if (!toolResult.ok) {
@@ -163,8 +161,8 @@ async function main(): Promise<number> {
       return { content: [{ type: 'text', text }] };
     };
 
-    // Kick off the agent using the prompt.
     const replyText = await agent.generateStr(query);
+
     send({
       type: 'final_output',
       output: {
@@ -172,10 +170,50 @@ async function main(): Promise<number> {
         reply: replyText || `Completed lookup for "${query}".`,
       },
     });
-    return 0;
-  }
+  };
 
-  return 1;
+  rl.on('line', (raw) => {
+    const line = raw.trim();
+    if (!line) {
+      return;
+    }
+    let message: IncomingMessage;
+    try {
+      message = JSON.parse(line) as IncomingMessage;
+    } catch {
+      return;
+    }
+
+    if (message.type === 'tool_result') {
+      handleToolResult(message as ToolResultMessage);
+      return;
+    }
+
+    if (message.type === 'task_start' && !started) {
+      started = true;
+      runTask(message as TaskStartMessage)
+        .then(() => {
+          rl.close();
+          process.exitCode = 0;
+        })
+        .catch((error) => {
+          process.stderr.write(String(error) + '\n');
+          rl.close();
+          process.exitCode = 1;
+        });
+      return;
+    }
+  });
+
+  return await new Promise<number>((resolve) => {
+    rl.on('close', () => {
+      if (!started) {
+        resolve(1);
+        return;
+      }
+      resolve(process.exitCode ?? 0);
+    });
+  });
 }
 
 main()
