@@ -1,0 +1,17 @@
+suite_name: runledger-demo
+agent_command: ["node", "--loader", "ts-node/esm", "evals/runledger/agent/agent.ts"]
+mode: replay
+cases_path: cases
+tool_registry:
+  - search_docs
+
+assertions:
+  - type: json_schema
+    schema_path: schema.json
+
+budgets:
+  max_wall_ms: 20000
+  max_tool_calls: 5
+  max_tool_errors: 0
+
+baseline_path: ../../baselines/runledger-demo.json

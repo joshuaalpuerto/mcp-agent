@@ -1,0 +1,5 @@
+id: t1
+description: "answer a short question with a replayed tool call"
+input:
+  prompt: "What is mcp-agent?"
+cassette: cassettes/t1.jsonl

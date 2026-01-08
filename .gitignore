@@ -146,3 +146,6 @@ demo/servers/community/
 
 # Ignore personal standalone server for now
 demo/standalone/personal/
+
+# RunLedger artifacts
+runledger_out/
