@@ -146,6 +146,18 @@ The framework uses a two-layer architecture to efficiently manage MCP server con
 - **Isolation:** Each agent only sees the tools it's configured to use
 - **Scalability:** Add new agents without duplicating existing server connections
 
+## Evaluation
+
+The project uses [RunLedger](https://pypi.org/project/runledger/) for deterministic agent evaluation through cassette replay. The evaluation suite lives in [`evals/runledger/`](./evals/runledger/) and runs automatically on every PR and push to `main` via GitHub Actions.
+
+```bash
+# Run evaluations locally
+python -m pip install "runledger==0.1.0"
+runledger run evals/runledger --mode replay --baseline baselines/runledger-demo.json
+```
+
+See the [evaluation README](./evals/runledger/README.md) for full details on how the suite works, the message protocol, and how to add new test cases.
+
 ## Acknowledgements
 
 This project is heavily inspired by and builds upon the concepts and architecture of the excellent [lastmile-ai/mcp-agent](https://github.com/lastmile-ai/mcp-agent) Python framework
